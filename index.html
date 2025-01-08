@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ice Growth Forecast Tool</title>
+    <title>Hourly Weather Forecast Tool</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <h1>7-Day Ice Growth Forecast Tool</h1>
+    <h1>7-Day Weather Forecast Tool</h1>
     <div id="map"></div>
     <div id="controls">
         <label for="search-location">Search Location:</label>
@@ -32,13 +32,13 @@
         <div id="unit-toggle" class="toggle-button">Metric</div>
         <div id="unit-toggle-imperial" class="toggle-button active">Imperial</div>
         <br><br>
-        <button id="fetch-weather">Fetch Ice Growth Data</button>
+        <button id="fetch-weather">Fetch Weather Data</button>
     </div>
     <div id="results">
         <h2>Results</h2>
         <div id="forecast-cards"></div>
         <div class="chart-container">
-            <canvas id="iceGrowthChart"></canvas>
+            <canvas id="weatherChart"></canvas>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
         const forecastCards = document.getElementById('forecast-cards');
         let marker;
         let isMetric = false; // Default to imperial
-        let iceGrowthChart;
+        let weatherChart;
 
         const toggleUnits = (metric) => {
             isMetric = metric;
@@ -66,7 +66,6 @@
         unitToggleMetric.addEventListener('click', () => toggleUnits(true));
         unitToggleImperial.addEventListener('click', () => toggleUnits(false));
 
-        const convertThickness = (value, toMetric) => toMetric ? value * 25.4 : value / 25.4;
         const fahrenheitToCelsius = (fahrenheit) => (fahrenheit - 32) * 5 / 9;
 
         map.on('click', (e) => {
@@ -106,103 +105,40 @@
                 const endDateObj = new Date(today);
                 endDateObj.setDate(today.getDate() + 6);
 
-                const calculateIceGrowth = (weatherData) => {
-                    const T_a = weatherData.airTemp; // Air temperature (°C)
-                    const v = weatherData.windSpeed; // Wind speed (m/s)
+                const weatherData = forecastData.map(forecast => ({
+                    time: new Date(forecast.startTime).toISOString().split('T')[1].split(':')[0],
+                    temperature: forecast.temperature,
+                    windSpeed: forecast.windSpeed,
+                    relativeHumidity: forecast.relativeHumidity.value,
+                    probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value
+                }));
 
-                    if (T_a === 0) return 0; // Avoid division by zero
-                    return v / Math.max(T_a, 0.1); // Avoid division by zero and negative values
-                };
-
-                const iceGrowthData = [];
-                const hourlyData = [];
-                let totalThickness = 0.05; // Initial ice thickness in meters (5 cm)
-
-                for (let day = 0; day <= 6; day++) {
-                    const date = new Date(today);
-                    date.setDate(today.getDate() + day);
-
-                    const hourlyForecast = forecastData.filter(forecast => {
-                        const forecastDate = new Date(forecast.startTime);
-                        return forecastDate.toISOString().split('T')[0] === date.toISOString().split('T')[0];
-                    });
-
-                    if (hourlyForecast.length === 0) {
-                        iceGrowthData.push({
-                            date: date.toISOString().split('T')[0],
-                            hourly: []
-                        });
-                        continue;
-                    }
-
-                    const hourlyGrowthData = hourlyForecast.map(forecast => {
-                        const weatherData = {
-                            airTemp: fahrenheitToCelsius(forecast.temperature),
-                            windSpeed: parseFloat(forecast.windSpeed.split(' ')[0]),
-                            humidity: forecast.relativeHumidity.value || 0,
-                            probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value || 0,
-                        };
-                        const growthRate = calculateIceGrowth(weatherData);
-                        return {
-                            time: new Date(forecast.startTime).toISOString().split('T')[1].split(':')[0],
-                            growthRate: isMetric ? growthRate * 1000 : convertThickness(growthRate * 1000, false), // Convert to mm or in
-                            temperature: forecast.temperature,
-                            windSpeed: forecast.windSpeed,
-                            relativeHumidity: forecast.relativeHumidity.value,
-                            probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
-                        };
-                    });
-
-                    hourlyData.push(...hourlyGrowthData);
-
-                    iceGrowthData.push({
-                        date: date.toISOString().split('T')[0],
-                        hourly: hourlyGrowthData
-                    });
-                }
-
-                forecastCards.innerHTML = iceGrowthData.map(data => `
+                forecastCards.innerHTML = weatherData.map(data => `
                     <div style="border: 1px solid #ccc; padding: 10px; margin: 10px;">
-                        <h3>${data.date}</h3>
-                        ${data.hourly.map(hour => `
-                            <p>Time: ${hour.time}:00</p>
-                            <p>Ice Growth Rate: ${hour.growthRate.toFixed(2)} ${isMetric ? 'mm/hour' : 'in/hour'}</p>
-                            <p>Temperature: ${hour.temperature} °F</p>
-                            <p>Wind Speed: ${hour.windSpeed}</p>
-                            <p>Relative Humidity: ${hour.relativeHumidity}%</p>
-                            <p>Probability of Precipitation: ${hour.probabilityOfPrecipitation}%</p>
-                        `).join('')}
+                        <h3>${data.time}:00</h3>
+                        <p>Temperature: ${data.temperature} °F</p>
+                        <p>Wind Speed: ${data.windSpeed}</p>
+                        <p>Relative Humidity: ${data.relativeHumidity}%</p>
+                        <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
                     </div>
                 `).join('');
 
-                const labels = hourlyData.map(data => `${data.time}:00`);
-                const growthRates = hourlyData.map(data => data.growthRate);
-                const temperatures = hourlyData.map(data => data.temperature);
-                const windSpeeds = hourlyData.map(data => data.windSpeed);
-                const humidities = hourlyData.map(data => data.relativeHumidity);
-                const precipitations = hourlyData.map(data => data.probabilityOfPrecipitation);
-                const totalThicknesses = hourlyData.reduce((acc, data) => {
-                    const newThickness = acc.length ? acc[acc.length - 1] + data.growthRate : data.growthRate;
-                    return [...acc, Math.max(newThickness, 0)]; // Ensure thickness does not go below 0
-                }, []);
+                const labels = weatherData.map(data => `${data.time}:00`);
+                const temperatures = weatherData.map(data => data.temperature);
+                const windSpeeds = weatherData.map(data => data.windSpeed);
+                const humidities = weatherData.map(data => data.relativeHumidity);
+                const precipitations = weatherData.map(data => data.probabilityOfPrecipitation);
 
-                if (iceGrowthChart) {
-                    iceGrowthChart.destroy();
+                if (weatherChart) {
+                    weatherChart.destroy();
                 }
 
-                const ctx = document.getElementById('iceGrowthChart').getContext('2d');
-                iceGrowthChart = new Chart(ctx, {
+                const ctx = document.getElementById('weatherChart').getContext('2d');
+                weatherChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [
-                            {
-                                label: `Ice Growth Rate (${isMetric ? 'mm/hour' : 'in/hour'})`,
-                                data: growthRates,
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                fill: true,
-                            },
                             {
                                 label: 'Temperature (°F)',
                                 data: temperatures,
@@ -230,13 +166,6 @@
                                 borderColor: 'rgba(255, 159, 64, 1)',
                                 backgroundColor: 'rgba(255, 159, 64, 0.2)',
                                 fill: true,
-                            },
-                            {
-                                label: `Total Thickness (${isMetric ? 'mm' : 'in'})`,
-                                data: totalThicknesses,
-                                borderColor: 'rgba(0, 0, 0, 1)',
-                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                                fill: true,
                             }
                         ]
                     },
@@ -251,8 +180,8 @@
                 });
 
             } catch (error) {
-                console.error('Error fetching ice growth data:', error);
-                alert('Failed to fetch ice growth data. Check console for details.');
+                console.error('Error fetching weather data:', error);
+                alert('Failed to fetch weather data. Check console for details.');
             }
         });
     </script>

@@ -111,7 +111,7 @@
                     const v = weatherData.windSpeed; // Wind speed (m/s)
 
                     if (T_a === 0) return 0; // Avoid division by zero
-                    return v / T_a;
+                    return v / Math.max(T_a, 0.1); // Avoid division by zero and negative values
                 };
 
                 const iceGrowthData = [];

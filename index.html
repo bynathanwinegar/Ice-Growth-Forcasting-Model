@@ -166,7 +166,7 @@
                             probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value || 0,
                         };
                         const growthRate = calculateIceGrowthComplex(weatherData, 0, 1) - 0.05; // 1 hour duration, initialThickness = 0.05m
-                        totalThickness += growthRate;
+                        totalThickness = Math.max(totalThickness + growthRate, 0); // Ensure thickness does not go below 0
                         return {
                             time: new Date(forecast.startTime).toISOString().split('T')[1].split(':')[0],
                             growthRate: isMetric ? growthRate * 1000 : convertThickness(growthRate * 1000, false), // Convert to mm or in
@@ -206,7 +206,8 @@
                 const humidities = hourlyData.map(data => data.relativeHumidity);
                 const precipitations = hourlyData.map(data => data.probabilityOfPrecipitation);
                 const totalThicknesses = hourlyData.reduce((acc, data) => {
-                    return [...acc, acc.length ? acc[acc.length - 1] + data.growthRate : data.growthRate];
+                    const newThickness = acc.length ? acc[acc.length - 1] + data.growthRate : data.growthRate;
+                    return [...acc, Math.max(newThickness, 0)]; // Ensure thickness does not go below 0
                 }, []);
 
                 if (iceGrowthChart) {

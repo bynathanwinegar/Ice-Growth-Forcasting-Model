@@ -106,35 +106,12 @@
                 const endDateObj = new Date(today);
                 endDateObj.setDate(today.getDate() + 6);
 
-                const calculateIceGrowthComplex = (weatherData, initialThickness, timeDurationHours) => {
-                    const k = 2.2; // Thermal conductivity of ice (W/m°C)
-                    const rho = 917; // Density of ice (kg/m³)
-                    const L = 334000; // Heat of fusion for ice (J/kg)
-                    const T_m = 0; // Freezing temperature of water (°C)
-                    const H0 = 10; // Baseline heat transfer coefficient for still air (W/m²°C)
-                    const alpha = 1.5; // Wind factor for heat transfer (W/m²°C per m/s)
-                    const h_threshold = 0.1; // Transition thickness between linear and square-root growth (m)
-
+                const calculateIceGrowth = (weatherData) => {
                     const T_a = weatherData.airTemp; // Air temperature (°C)
                     const v = weatherData.windSpeed; // Wind speed (m/s)
 
-                    const H_ia = H0 + alpha * v;
-
-                    const timeStepSeconds = 3600; // 1 hour in seconds
-                    const totalSteps = Math.ceil(timeDurationHours);
-                    let thickness = initialThickness;
-
-                    for (let step = 0; step < totalSteps; step++) {
-                        const T_s = (H_ia * T_a + (k / Math.max(thickness, 0.001)) * T_m) / (H_ia + (k / Math.max(thickness, 0.001)));
-
-                        if (thickness < h_threshold) {
-                            thickness += (H_ia * (T_m - T_a) * (timeStepSeconds / 3600)) / (rho * L * (H_ia + (k / Math.max(thickness, 0.001))));
-                        } else {
-                            thickness += Math.sqrt((2 * k * (T_m - T_a) * (timeStepSeconds / 3600)) / (rho * L));
-                        }
-                    }
-
-                    return thickness;
+                    if (T_a === 0) return 0; // Avoid division by zero
+                    return v / T_a;
                 };
 
                 const iceGrowthData = [];
@@ -165,8 +142,7 @@
                             humidity: forecast.relativeHumidity.value || 0,
                             probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value || 0,
                         };
-                        const growthRate = calculateIceGrowthComplex(weatherData, 0, 1) - 0.05; // 1 hour duration, initialThickness = 0.05m
-                        totalThickness = Math.max(totalThickness + growthRate, 0); // Ensure thickness does not go below 0
+                        const growthRate = calculateIceGrowth(weatherData);
                         return {
                             time: new Date(forecast.startTime).toISOString().split('T')[1].split(':')[0],
                             growthRate: isMetric ? growthRate * 1000 : convertThickness(growthRate * 1000, false), // Convert to mm or in

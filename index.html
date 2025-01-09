@@ -148,6 +148,37 @@
 
                 const today = new Date();
 
+                const calculatePotentialIceGrowthImperial = (airTempF, windSpeedMPH) => {
+                    const k = 2.2; // Thermal conductivity of ice (W/m°C)
+                    const rho = 917; // Density of ice (kg/m³)
+                    const L = 334000; // Latent heat of fusion for ice (J/kg)
+                    const H0 = 10; // Baseline heat transfer coefficient (W/m²°C)
+                    const alpha = 1.5; // Wind factor for heat transfer (W/m²°C per m/s)
+                    const timeStepSeconds = 3600; // 1 hour in seconds
+                    const initialThickness = 0.001; // Starting thickness in meters (1 mm)
+
+                    const fahrenheitToCelsius = (tempF) => (tempF - 32) * (5 / 9); // °F to °C
+                    const mphToMetersPerSecond = (speedMPH) => speedMPH * 0.44704; // mph to m/s
+                    const metersToInches = (lengthMeters) => lengthMeters * 39.3701; // meters to inches
+
+                    const airTempC = fahrenheitToCelsius(airTempF); // Convert °F to °C
+                    const windSpeedMPS = mphToMetersPerSecond(windSpeedMPH); // Convert mph to m/s
+
+                    const H_ia = H0 + alpha * windSpeedMPS;
+
+                    if (airTempC >= 0) {
+                        return "No ice growth (temperature above freezing)";
+                    }
+
+                    const potentialGrowthMeters =
+                        (H_ia * (0 - airTempC) * timeStepSeconds) /
+                        (rho * L * (H_ia + k / initialThickness));
+
+                    const potentialGrowthInches = metersToInches(potentialGrowthMeters);
+
+                    return `Potential ice growth: ${potentialGrowthInches.toFixed(2)} inches`;
+                };
+
                 const weatherData = forecastData.map(forecast => {
                     const date = new Date(forecast.startTime);
                     return {
@@ -156,7 +187,8 @@
                         temperature: forecast.temperature,
                         windSpeed: forecast.windSpeed,
                         relativeHumidity: forecast.relativeHumidity.value,
-                        probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value
+                        probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
+                        potentialIceGrowth: calculatePotentialIceGrowthImperial(forecast.temperature, parseFloat(forecast.windSpeed))
                     };
                 });
 
@@ -177,6 +209,7 @@
                                     <p>Wind Speed: ${isMetric ? mphToMs(parseFloat(data.windSpeed)) + ' m/s' : data.windSpeed}</p>
                                     <p>Relative Humidity: ${data.relativeHumidity}%</p>
                                     <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
+                                    <p>${data.potentialIceGrowth}</p>
                                 </div>
                             `).join('')}
                         </li>
@@ -196,6 +229,7 @@
                     const windSpeeds = weatherData.map(data => isMetric ? mphToMs(parseFloat(data.windSpeed)) : data.windSpeed);
                     const humidities = weatherData.map(data => data.relativeHumidity);
                     const precipitations = weatherData.map(data => data.probabilityOfPrecipitation);
+                    const iceGrowth = weatherData.map(data => data.potentialIceGrowth.replace('Potential ice growth: ', '').replace(' inches', ''));
 
                     if (weatherChart) {
                         weatherChart.destroy();
@@ -233,6 +267,13 @@
                                     data: precipitations,
                                     borderColor: 'rgba(255, 159, 64, 1)',
                                     backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                    fill: true,
+                                },
+                                {
+                                    label: 'Potential Ice Growth (inches)',
+                                    data: iceGrowth,
+                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
                                     fill: true,
                                 }
                             ]

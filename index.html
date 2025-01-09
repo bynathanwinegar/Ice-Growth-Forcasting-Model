@@ -130,8 +130,8 @@
                 });
 
                 const groupedData = [];
-                for (let i = 0; i < weatherData.length; i += 6) {
-                    const group = weatherData.slice(i, i + 6);
+                for (let i = 0; i < weatherData.length; i += 5) {
+                    const group = weatherData.slice(i, i + 5);
                     groupedData.push(group);
                 }
 
@@ -152,9 +152,9 @@
 
                     new Glide('.glide', {
                         type: 'carousel',
-                        perView: 2,
+                        perView: 1,
                         gap: 10,
-                        animationDuration: 1000, // Slow down the animation
+                        animationDuration: 2000, // Slow down the animation
                     }).mount();
 
                     const labels = weatherData.map(data => `${data.day} ${data.time}:00`);

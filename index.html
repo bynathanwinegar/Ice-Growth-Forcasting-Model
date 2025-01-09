@@ -21,6 +21,7 @@
         .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
         .glide__arrows { display: flex; justify-content: center; }
         .glide__arrow { margin: 0 10px; }
+        #results { display: none; }
     </style>
 </head>
 <body>
@@ -67,6 +68,7 @@
         const unitToggleMetric = document.getElementById('unit-toggle');
         const unitToggleImperial = document.getElementById('unit-toggle-imperial');
         const forecastCards = document.getElementById('forecast-cards');
+        const results = document.getElementById('results');
         let marker;
         let isMetric = false; // Default to imperial
         let weatherChart;
@@ -88,8 +90,10 @@
             selectedLatLng = e.latlng;
             const { lat, lng } = selectedLatLng;
             coordinatesInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            searchLocationInput.value = '';
             if (marker) marker.setLatLng(selectedLatLng);
             else marker = L.marker(selectedLatLng).addTo(map);
+            results.style.display = 'none';
         });
 
         coordinatesInput.addEventListener('change', () => {
@@ -99,8 +103,33 @@
                 if (marker) marker.setLatLng(selectedLatLng);
                 else marker = L.marker(selectedLatLng).addTo(map);
                 map.setView(selectedLatLng, map.getZoom());
+                results.style.display = 'none';
             } else {
                 alert('Invalid coordinates. Please enter in the format: Latitude, Longitude');
+            }
+        });
+
+        searchButton.addEventListener('click', async () => {
+            const location = searchLocationInput.value;
+            if (!location) {
+                alert('Please enter a location.');
+                return;
+            }
+
+            try {
+                const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`);
+                if (response.data.length > 0) {
+                    const { lat, lon } = response.data[0];
+                    selectedLatLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+                    if (marker) marker.setLatLng(selectedLatLng);
+                    else marker = L.marker(selectedLatLng).addTo(map);
+                    map.setView(selectedLatLng, map.getZoom());
+                } else {
+                    alert('Location not found.');
+                }
+            } catch (error) {
+                console.error('Error searching location:', error);
+                alert('Failed to search location. Check console for details.');
             }
         });
 
@@ -224,6 +253,7 @@
                 window.addEventListener('resize', updateForecastCardsAndChart);
 
                 updateForecastCardsAndChart();
+                results.style.display = 'block';
 
             } catch (error) {
                 console.error('Error fetching weather data:', error);

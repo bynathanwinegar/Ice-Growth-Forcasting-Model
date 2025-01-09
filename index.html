@@ -21,7 +21,7 @@
         .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
         .glide__arrows { display: flex; justify-content: center; }
         .glide__arrow { margin: 0 10px; }
-        #results, .glide { display: none; }
+        #results { display: none; }
     </style>
 </head>
 <body>
@@ -240,6 +240,7 @@
 
                 updateForecastCardsAndChart();
                 resultsSection.style.display = 'block'; // Unhide results
+                document.querySelector('.glide').style.display = 'block'; // Unhide glide_slide
 
             } catch (error) {
                 console.error('Error fetching weather data:', error);

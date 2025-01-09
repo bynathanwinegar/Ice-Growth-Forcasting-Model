@@ -83,6 +83,7 @@
 
         const fahrenheitToCelsius = (fahrenheit) => ((fahrenheit - 32) * 5 / 9).toFixed(2);
         const mphToMs = (mph) => (mph * 0.44704).toFixed(2);
+        const mmToInches = (mm) => (mm * 0.0393701).toFixed(2);
 
         map.on('click', (e) => {
             selectedLatLng = e.latlng;
@@ -156,6 +157,8 @@
                     const airTemp = (isMetric ? fahrenheitToCelsius(forecast.temperature) : forecast.temperature);
                     const windSpeed = (isMetric ? mphToMs(parseFloat(forecast.windSpeed)) : parseFloat(forecast.windSpeed));
                     const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
+                    const iceGrowth = calculateIceGrowth(airTemp, windSpeed, cloudCover);
+                    const convertedIceGrowth = isMetric ? `${iceGrowth} mm/hr` : `${mmToInches(iceGrowth)} inches/hr`;
 
                     return {
                         day: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
@@ -164,7 +167,7 @@
                         windSpeed: forecast.windSpeed,
                         relativeHumidity: forecast.relativeHumidity.value,
                         probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
-                        potentialIceGrowth: `${calculateIceGrowth(airTemp, windSpeed, cloudCover)} mm/hr`
+                        potentialIceGrowth: convertedIceGrowth
                     };
                 });
 
@@ -213,7 +216,7 @@
             const windSpeeds = weatherData.map(data => isMetric ? mphToMs(parseFloat(data.windSpeed)) : data.windSpeed);
             const humidities = weatherData.map(data => data.relativeHumidity);
             const precipitations = weatherData.map(data => data.probabilityOfPrecipitation);
-            const iceGrowth = weatherData.map(data => parseFloat(data.potentialIceGrowth.replace(' mm/hr', '')));
+            const iceGrowth = weatherData.map(data => parseFloat(data.potentialIceGrowth.replace(' mm/hr', '').replace(' inches/hr', '')));
 
             if (weatherChart) {
                 weatherChart.destroy();
@@ -254,7 +257,7 @@
                             fill: true,
                         },
                         {
-                            label: 'Potential Ice Growth (mm/hr)',
+                            label: `Potential Ice Growth (${isMetric ? 'mm/hr' : 'inches/hr'})`,
                             data: iceGrowth,
                             borderColor: 'rgba(0, 0, 0, 1)',
                             backgroundColor: 'rgba(0, 0, 0, 0.2)',

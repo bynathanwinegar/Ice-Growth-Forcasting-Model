@@ -17,7 +17,8 @@
         .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
         .toggle-button.active { background-color: #007bff; color: white; }
         h1 { text-align: center; }
-        .glide__slide { padding: 10px; }
+        .glide__slide { padding: 10px; display: flex; flex-direction: column; }
+        .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
     </style>
 </head>
 <body>
@@ -126,25 +127,31 @@
                     };
                 });
 
-                forecastCards.innerHTML = weatherData.map(data => `
+                const groupedData = [];
+                for (let i = 0; i < weatherData.length; i += 6) {
+                    const group = weatherData.slice(i, i + 6);
+                    groupedData.push(group);
+                }
+
+                forecastCards.innerHTML = groupedData.map(group => `
                     <li class="glide__slide">
-                        <h3>${data.day} ${data.time}:00</h3>
-                        <p>Temperature: ${data.temperature} °F</p>
-                        <p>Wind Speed: ${data.windSpeed}</p>
-                        <p>Relative Humidity: ${data.relativeHumidity}%</p>
-                        <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
+                        ${group.map(data => `
+                            <div class="hour-box">
+                                <h3>${data.day} ${data.time}:00</h3>
+                                <p>Temperature: ${data.temperature} °F</p>
+                                <p>Wind Speed: ${data.windSpeed}</p>
+                                <p>Relative Humidity: ${data.relativeHumidity}%</p>
+                                <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
+                            </div>
+                        `).join('')}
                     </li>
                 `).join('');
 
                 new Glide('.glide', {
                     type: 'carousel',
-                    perView: 6,
+                    perView: 1,
                     gap: 10,
-                    animationDuration: 1000, // Optional: Duration of the animation
-                    animationTimingFunc: 'ease-in-out', // Optional: Timing function for the animation
-                    rewind: false, // Optional: Disable rewind function
-                    swipeThreshold: 80, // Optional: Swipe threshold
-                    perTouch: 6 // Allow scrolling 6 slides at a time
+                    animationDuration: 500, // Speed up the animation
                 }).mount();
 
                 const labels = weatherData.map(data => `${data.day} ${data.time}:00`);

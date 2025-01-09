@@ -140,7 +140,11 @@
                     type: 'carousel',
                     perView: 6,
                     gap: 10,
-                    slidesToScroll: 6
+                    animationDuration: 1000, // Optional: Duration of the animation
+                    animationTimingFunc: 'ease-in-out', // Optional: Timing function for the animation
+                    rewind: false, // Optional: Disable rewind function
+                    swipeThreshold: 80, // Optional: Swipe threshold
+                    perTouch: 6 // Allow scrolling 6 slides at a time
                 }).mount();
 
                 const labels = weatherData.map(data => `${data.day} ${data.time}:00`);

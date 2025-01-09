@@ -17,12 +17,10 @@
         .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
         .toggle-button.active { background-color: #007bff; color: white; }
         h1, h2 { text-align: center; }
-        .glide { width: 100%; margin: 20px auto; }
         .glide__slide { padding: 10px; display: flex; justify-content: center; }
         .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
         .glide__arrows { display: flex; justify-content: center; }
         .glide__arrow { margin: 0 10px; }
-        #results { display: none; width: 100%; }
     </style>
 </head>
 <body>
@@ -69,7 +67,6 @@
         const unitToggleMetric = document.getElementById('unit-toggle');
         const unitToggleImperial = document.getElementById('unit-toggle-imperial');
         const forecastCards = document.getElementById('forecast-cards');
-        const resultsDiv = document.getElementById('results');
         let marker;
         let isMetric = false; // Default to imperial
         let weatherChart;
@@ -91,10 +88,8 @@
             selectedLatLng = e.latlng;
             const { lat, lng } = selectedLatLng;
             coordinatesInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            searchLocationInput.value = '';  // Clear location search box
             if (marker) marker.setLatLng(selectedLatLng);
             else marker = L.marker(selectedLatLng).addTo(map);
-            resultsDiv.style.display = 'none';  // Hide results
         });
 
         coordinatesInput.addEventListener('change', () => {
@@ -104,33 +99,8 @@
                 if (marker) marker.setLatLng(selectedLatLng);
                 else marker = L.marker(selectedLatLng).addTo(map);
                 map.setView(selectedLatLng, map.getZoom());
-                resultsDiv.style.display = 'none';  // Hide results
             } else {
                 alert('Invalid coordinates. Please enter in the format: Latitude, Longitude');
-            }
-        });
-
-        searchButton.addEventListener('click', async () => {
-            const location = searchLocationInput.value;
-            if (!location) {
-                alert('Please enter a location.');
-                return;
-            }
-            try {
-                const geocodeResponse = await axios.get(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`);
-                if (geocodeResponse.data.length === 0) {
-                    alert('Location not found.');
-                    return;
-                }
-                const { lat, lon } = geocodeResponse.data[0];
-                selectedLatLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
-                coordinatesInput.value = `${lat}, ${lon}`;
-                if (marker) marker.setLatLng(selectedLatLng);
-                else marker = L.marker(selectedLatLng).addTo(map);
-                map.setView(selectedLatLng, map.getZoom());
-            } catch (error) {
-                console.error('Error fetching location:', error);
-                alert('Failed to fetch location. Check console for details.');
             }
         });
 
@@ -189,7 +159,7 @@
                         type: 'carousel',
                         perView: 1,
                         gap: 10,
-                        animationDuration: 1000, // Adjusted animation duration to 1000
+                        animationDuration: 2000, // Slow down the animation
                     };
 
                     new Glide('.glide', glideOptions).mount();
@@ -254,7 +224,6 @@
                 window.addEventListener('resize', updateForecastCardsAndChart);
 
                 updateForecastCardsAndChart();
-                resultsDiv.style.display = 'block';  // Show results
 
             } catch (error) {
                 console.error('Error fetching weather data:', error);

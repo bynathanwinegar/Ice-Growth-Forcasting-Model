@@ -102,6 +102,8 @@
             }
         });
 
+        const getGroupSize = () => window.innerWidth > window.innerHeight ? 10 : 3;
+
         document.getElementById('fetch-weather').addEventListener('click', async () => {
             if (!selectedLatLng) {
                 alert('Please select a location on the map or enter coordinates.');
@@ -129,13 +131,14 @@
                     };
                 });
 
-                const groupedData = [];
-                for (let i = 0; i < weatherData.length; i += 5) {
-                    const group = weatherData.slice(i, i + 5);
-                    groupedData.push(group);
-                }
-
                 const updateForecastCardsAndChart = () => {
+                    const groupSize = getGroupSize();
+                    const groupedData = [];
+                    for (let i = 0; i < weatherData.length; i += groupSize) {
+                        const group = weatherData.slice(i, i + groupSize);
+                        groupedData.push(group);
+                    }
+
                     forecastCards.innerHTML = groupedData.map(group => `
                         <li class="glide__slide">
                             ${group.map(data => `

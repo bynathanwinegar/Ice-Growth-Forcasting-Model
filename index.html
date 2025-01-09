@@ -104,6 +104,30 @@
             }
         });
 
+        searchButton.addEventListener('click', async () => {
+            const location = searchLocationInput.value;
+            if (!location) {
+                alert('Please enter a location.');
+                return;
+            }
+            try {
+                const geocodeResponse = await axios.get(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`);
+                if (geocodeResponse.data.length === 0) {
+                    alert('Location not found.');
+                    return;
+                }
+                const { lat, lon } = geocodeResponse.data[0];
+                selectedLatLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+                coordinatesInput.value = `${lat}, ${lon}`;
+                if (marker) marker.setLatLng(selectedLatLng);
+                else marker = L.marker(selectedLatLng).addTo(map);
+                map.setView(selectedLatLng, map.getZoom());
+            } catch (error) {
+                console.error('Error fetching location:', error);
+                alert('Failed to fetch location. Check console for details.');
+            }
+        });
+
         const getGroupSize = () => window.innerWidth > window.innerHeight ? 10 : 3;
 
         document.getElementById('fetch-weather').addEventListener('click', async () => {
@@ -159,7 +183,7 @@
                         type: 'carousel',
                         perView: 1,
                         gap: 10,
-                        animationDuration: 2000, // Slow down the animation
+                        animationDuration: 1000, // Slow down the animation
                     };
 
                     new Glide('.glide', glideOptions).mount();

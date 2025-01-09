@@ -40,6 +40,9 @@
     </div>
     <div id="results">
         <h2>Results</h2>
+        <div class="chart-container">
+            <canvas id="weatherChart"></canvas>
+        </div>
         <div class="glide">
             <div class="glide__track" data-glide-el="track">
                 <ul class="glide__slides" id="forecast-cards"></ul>
@@ -48,9 +51,6 @@
                 <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
                 <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
             </div>
-        </div>
-        <div class="chart-container">
-            <canvas id="weatherChart"></canvas>
         </div>
     </div>
 
@@ -151,7 +151,7 @@
                     type: 'carousel',
                     perView: 1,
                     gap: 10,
-                    animationDuration: 500, // Speed up the animation
+                    animationDuration: 2000, // Slow down the animation
                 }).mount();
 
                 const labels = weatherData.map(data => `${data.day} ${data.time}:00`);

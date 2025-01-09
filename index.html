@@ -150,12 +150,14 @@
                         </li>
                     `).join('');
 
-                    new Glide('.glide', {
+                    const glideOptions = {
                         type: 'carousel',
-                        perView: 2,
-                        gap: 5,
+                        perView: window.innerWidth < 768 ? 1 : 2, // Switch perView based on screen size
+                        gap: 10,
                         animationDuration: 2000, // Slow down the animation
-                    }).mount();
+                    };
+
+                    new Glide('.glide', glideOptions).mount();
 
                     const labels = weatherData.map(data => `${data.day} ${data.time}:00`);
                     const temperatures = weatherData.map(data => isMetric ? fahrenheitToCelsius(data.temperature) : data.temperature);
@@ -213,6 +215,8 @@
                         },
                     });
                 };
+
+                window.addEventListener('resize', updateForecastCardsAndChart);
 
                 updateForecastCardsAndChart();
 

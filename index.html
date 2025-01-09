@@ -90,6 +90,7 @@
             coordinatesInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
             if (marker) marker.setLatLng(selectedLatLng);
             else marker = L.marker(selectedLatLng).addTo(map);
+            searchLocationInput.value = ''; // Clear the location search box
         });
 
         coordinatesInput.addEventListener('change', () => {
@@ -101,6 +102,32 @@
                 map.setView(selectedLatLng, map.getZoom());
             } else {
                 alert('Invalid coordinates. Please enter in the format: Latitude, Longitude');
+            }
+        });
+
+        searchButton.addEventListener('click', async () => {
+            const location = searchLocationInput.value;
+            if (!location) {
+                alert('Please enter a location.');
+                return;
+            }
+
+            try {
+                const response = await axios.get(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`);
+                if (response.data.length > 0) {
+                    const { lat, lon } = response.data[0];
+                    const newLatLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+                    selectedLatLng = newLatLng;
+                    if (marker) marker.setLatLng(newLatLng);
+                    else marker = L.marker(newLatLng).addTo(map);
+                    map.setView(newLatLng, map.getZoom());
+                    coordinatesInput.value = `${newLatLng.lat.toFixed(6)}, ${newLatLng.lng.toFixed(6)}`;
+                } else {
+                    alert('Location not found.');
+                }
+            } catch (error) {
+                console.error('Error searching location:', error);
+                alert('Failed to search location. Check console for details.');
             }
         });
 

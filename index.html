@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hourly Weather Forecast Tool</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/css/glide.core.min.css">
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/glide.min.js"></script>
     <style>
         #map { height: 500px; }
         #controls { margin: 20px 0; text-align: center; }
@@ -15,6 +17,7 @@
         .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
         .toggle-button.active { background-color: #007bff; color: white; }
         h1 { text-align: center; }
+        .glide__slide { padding: 10px; }
     </style>
 </head>
 <body>
@@ -36,7 +39,15 @@
     </div>
     <div id="results">
         <h2>Results</h2>
-        <div id="forecast-cards"></div>
+        <div class="glide">
+            <div class="glide__track" data-glide-el="track">
+                <ul class="glide__slides" id="forecast-cards"></ul>
+            </div>
+            <div class="glide__arrows" data-glide-el="controls">
+                <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
+                <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
+            </div>
+        </div>
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
         </div>
@@ -114,14 +125,16 @@
                 }));
 
                 forecastCards.innerHTML = weatherData.map(data => `
-                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px;">
+                    <li class="glide__slide">
                         <h3>${data.time}:00</h3>
                         <p>Temperature: ${data.temperature} °F</p>
                         <p>Wind Speed: ${data.windSpeed}</p>
                         <p>Relative Humidity: ${data.relativeHumidity}%</p>
                         <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
-                    </div>
+                    </li>
                 `).join('');
+
+                new Glide('.glide').mount();
 
                 const labels = weatherData.map(data => `${data.time}:00`);
                 const temperatures = weatherData.map(data => data.temperature);

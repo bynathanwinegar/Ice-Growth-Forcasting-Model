@@ -133,6 +133,37 @@
 
         const getGroupSize = () => window.innerWidth > window.innerHeight ? 10 : 3;
 
+        const calculateIceGrowthComplex = (weatherData, initialThickness, timeDurationHours) => {
+            const k = 2.2; // Thermal conductivity of ice (W/m°C)
+            const rho = 917; // Density of ice (kg/m³)
+            const L = 334000; // Heat of fusion for ice (J/kg)
+            const T_m = 0; // Freezing temperature of water (°C)
+            const H0 = 10; // Baseline heat transfer coefficient for still air (W/m²°C)
+            const alpha = 1.5; // Wind factor for heat transfer (W/m²°C per m/s)
+            const h_threshold = 0.1; // Transition thickness between linear and square-root growth (m)
+        
+            const T_a = weatherData.airTemp; // Air temperature (°C)
+            const v = weatherData.windSpeed; // Wind speed (m/s)
+        
+            const H_ia = H0 + alpha * v;
+        
+            const timeStepSeconds = 3600; // 1 hour in seconds
+            const totalSteps = Math.ceil(timeDurationHours); // Total time steps
+            let thickness = initialThickness; // Initialize thickness
+        
+            for (let step = 0; step < totalSteps; step++) {
+                const T_s = (H_ia * T_a + (k / Math.max(thickness, 0.001)) * T_m) / (H_ia + (k / Math.max(thickness, 0.001)));
+        
+                if (thickness < h_threshold) {
+                    thickness += (H_ia * (T_m - T_a) * (timeStepSeconds / 3600)) / (rho * L * (H_ia + (k / Math.max(thickness, 0.001))));
+                } else {
+                    thickness += Math.sqrt((2 * k * (T_m - T_a) * (timeStepSeconds / 3600)) / (rho * L));
+                }
+            }
+        
+            return thickness;
+        };
+
         document.getElementById('fetch-weather').addEventListener('click', async () => {
             if (!selectedLatLng) {
                 alert('Please select a location on the map or enter coordinates.');
@@ -150,13 +181,19 @@
 
                 const weatherData = forecastData.map(forecast => {
                     const date = new Date(forecast.startTime);
+                    const potentialIceGrowth = calculateIceGrowthComplex({
+                        airTemp: forecast.temperature,
+                        windSpeed: parseFloat(forecast.windSpeed)
+                    }, 0.05, 1); // Initial thickness of 0.05 meters and 1-hour duration
+
                     return {
                         day: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                         time: date.toISOString().split('T')[1].split(':')[0],
                         temperature: forecast.temperature,
                         windSpeed: forecast.windSpeed,
                         relativeHumidity: forecast.relativeHumidity.value,
-                        probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value
+                        probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
+                        potentialIceGrowth: potentialIceGrowth.toFixed(2) // Adding potential ice growth
                     };
                 });
 
@@ -177,6 +214,7 @@
                                     <p>Wind Speed: ${isMetric ? mphToMs(parseFloat(data.windSpeed)) + ' m/s' : data.windSpeed}</p>
                                     <p>Relative Humidity: ${data.relativeHumidity}%</p>
                                     <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
+                                    <p>Potential Lake Ice Growth: ${data.potentialIceGrowth} meters</p> <!-- Displaying potential ice growth -->
                                 </div>
                             `).join('')}
                         </li>

@@ -260,6 +260,20 @@
                     labels: labels,
                     datasets: [
                         {
+                            label: `Potential Ice Growth (${isMetric ? 'mm/hr' : 'inches/hr'})`,
+                            data: iceGrowth,
+                            borderColor: 'rgba(0, 0, 0, 1)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                            fill: true,
+                        },
+                        {
+                            label: `Total Ice Thickness (${isMetric ? 'mm' : 'inches'})`,
+                            data: totalIceThicknesses,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            fill: true,
+                        },
+                        {
                             label: `Temperature (${isMetric ? '°C' : '°F'})`,
                             data: temperatures,
                             borderColor: 'rgba(255, 99, 132, 1)',
@@ -285,20 +299,6 @@
                             data: precipitations,
                             borderColor: 'rgba(255, 159, 64, 1)',
                             backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                            fill: true,
-                        },
-                        {
-                            label: `Potential Ice Growth (${isMetric ? 'mm/hr' : 'inches/hr'})`,
-                            data: iceGrowth,
-                            borderColor: 'rgba(0, 0, 0, 1)',
-                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                            fill: true,
-                        },
-                        {
-                            label: `Total Ice Thickness (${isMetric ? 'mm' : 'inches'})`,
-                            data: totalIceThicknesses,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             fill: true,
                         }
                     ]

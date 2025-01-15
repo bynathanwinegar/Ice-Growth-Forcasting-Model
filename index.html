@@ -142,6 +142,14 @@
             return (0.05 * absAirTemp + 0.02 * absAirTemp * windSpeed + 0.7 * (1 - cloudCover)).toFixed(2);
         };
 
+        const calculateAshtonIceGrowth = (airTemp, freezingDegreeDays) => {
+            if (airTemp > 32) {
+                return 0;
+            }
+            const freezingDegreeDaysSquareRoot = Math.sqrt(freezingDegreeDays);
+            return (0.04 * freezingDegreeDaysSquareRoot).toFixed(2);
+        };
+
         document.getElementById('fetch-weather').addEventListener('click', async () => {
             if (!selectedLatLng) {
                 alert('Please select a location on the map or enter coordinates.');
@@ -156,12 +164,25 @@
                 const forecastData = forecastResponse.data.properties.periods;
 
                 let totalIceThickness = 0;
+                let freezingDegreeDays = 0;
+                const freezingPoint = 32; // Freezing point of water in Fahrenheit
                 const weatherData = forecastData.map(forecast => {
                     const date = new Date(forecast.startTime);
                     const airTemp = (isMetric ? fahrenheitToCelsius(forecast.temperature) : forecast.temperature);
                     const windSpeed = (isMetric ? mphToMs(parseFloat(forecast.windSpeed)) : parseFloat(forecast.windSpeed));
                     const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
-                    const iceGrowth = calculateIceGrowth(airTemp, windSpeed, cloudCover);
+                    
+                    // Calculate freezing degree days
+                    if (airTemp < freezingPoint) {
+                        freezingDegreeDays += (freezingPoint - airTemp);
+                    }
+
+                    let iceGrowth;
+                    if (totalIceThickness < 10) {
+                        iceGrowth = calculateIceGrowth(airTemp, windSpeed, cloudCover);
+                    } else {
+                        iceGrowth = calculateAshtonIceGrowth(airTemp, freezingDegreeDays);
+                    }
 
                     totalIceThickness += parseFloat(isMetric ? iceGrowth : mmToInches(iceGrowth));
                     const convertedIceGrowth = isMetric ? `${iceGrowth} mm/hr` : `${mmToInches(iceGrowth)} inches/hr`;

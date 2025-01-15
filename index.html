@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ice Growth Forecasting Tool</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/css/glide.core.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glider-js/glider.min.css">
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/glide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/glider-js/glider.min.js"></script>
     <style>
         #map { height: 500px; }
         #controls { margin: 20px 0; text-align: center; }
@@ -17,10 +17,9 @@
         .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
         .toggle-button.active { background-color: #007bff; color: white; }
         h1, h2 { text-align: center; }
-        .glide__slide { padding: 10px; display: flex; justify-content: center; }
+        .glider-slide { padding: 10px; display: flex; justify-content: center; }
         .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
-        .glide__arrows { display: flex; justify-content: center; }
-        .glide__arrow { margin: 0 10px; }
+        .glider-prev, .glider-next { cursor: pointer; }
     </style>
 </head>
 <body>
@@ -45,14 +44,11 @@
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
         </div>
-        <div class="glide">
-            <div class="glide__track" data-glide-el="track">
-                <ul class="glide__slides" id="forecast-cards"></ul>
-            </div>
-            <div class="glide__arrows" data-glide-el="controls">
-                <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
-                <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
-            </div>
+        <div class="glider-contain">
+            <div class="glider" id="forecast-cards"></div>
+            <button class="glider-prev">«</button>
+            <button class="glider-next">»</button>
+            <div role="tablist" class="dots"></div>
         </div>
     </div>
 
@@ -217,7 +213,7 @@
             }
 
             forecastCards.innerHTML = groupedData.map(group => `
-                <li class="glide__slide">
+                <div class="glider-slide">
                     ${group.map(data => `
                         <div class="hour-box">
                             <h3>${data.day} ${data.time}:00</h3>
@@ -229,17 +225,35 @@
                             <p>Total Ice Thickness: ${data.totalIceThickness}</p>
                         </div>
                     `).join('')}
-                </li>
+                </div>
             `).join('');
 
-            const glideOptions = {
-                type: 'carousel',
-                perView: 1,
-                gap: 10,
-                animationDuration: 2000, // Slow down the animation
-            };
-
-            new Glide('.glide', glideOptions).mount();
+            const glider = new Glider(document.querySelector('.glider'), {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                draggable: true,
+                dots: '.dots',
+                arrows: {
+                    prev: '.glider-prev',
+                    next: '.glider-next'
+                },
+                responsive: [
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            slidesToShow: 2,
+                            slidesToScroll: 2
+                        }
+                    },
+                    {
+                        breakpoint: 1024,
+                        settings: {
+                            slidesToShow: 3,
+                            slidesToScroll: 3
+                        }
+                    }
+                ]
+            });
 
             const labels = weatherData.map(data => `${data.day} ${data.time}:00`);
             const temperatures = weatherData.map(data => isMetric ? fahrenheitToCelsius(data.temperature) : data.temperature);

@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ice Growth Forecasting Tool</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/css/glide.core.min.css">
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/glide.min.js"></script>
     <style>
         #map { height: 500px; }
         #controls { margin: 20px 0; text-align: center; }
@@ -17,9 +17,10 @@
         .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
         .toggle-button.active { background-color: #007bff; color: white; }
         h1, h2 { text-align: center; }
-        .swiper-slide { padding: 10px; display: flex; justify-content: center; }
+        .glide__slide { padding: 10px; display: flex; justify-content: center; }
         .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
-        .swiper-button-prev, .swiper-button-next { color: #007bff; }
+        .glide__arrows { display: flex; justify-content: center; }
+        .glide__arrow { margin: 0 10px; }
     </style>
 </head>
 <body>
@@ -44,10 +45,14 @@
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
         </div>
-        <div class="swiper-container">
-            <div class="swiper-wrapper" id="forecast-cards"></div>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
+        <div class="glide">
+            <div class="glide__track" data-glide-el="track">
+                <ul class="glide__slides" id="forecast-cards"></ul>
+            </div>
+            <div class="glide__arrows" data-glide-el="controls">
+                <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
+                <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
+            </div>
         </div>
     </div>
 
@@ -212,7 +217,7 @@
             }
 
             forecastCards.innerHTML = groupedData.map(group => `
-                <div class="swiper-slide">
+                <li class="glide__slide">
                     ${group.map(data => `
                         <div class="hour-box">
                             <h3>${data.day} ${data.time}:00</h3>
@@ -224,18 +229,17 @@
                             <p>Total Ice Thickness: ${data.totalIceThickness}</p>
                         </div>
                     `).join('')}
-                </div>
+                </li>
             `).join('');
 
-            const swiper = new Swiper('.swiper-container', {
-                navigation: {
-                    nextEl: '.swiper-button-next',
-                    prevEl: '.swiper-button-prev',
-                },
-                slidesPerView: 1,
-                spaceBetween: 10,
-                speed: 2000,
-            });
+            const glideOptions = {
+                type: 'carousel',
+                perView: 1,
+                gap: 10,
+                animationDuration: 2000, // Slow down the animation
+            };
+
+            new Glide('.glide', glideOptions).mount();
 
             const labels = weatherData.map(data => `${data.day} ${data.time}:00`);
             const temperatures = weatherData.map(data => isMetric ? fahrenheitToCelsius(data.temperature) : data.temperature);

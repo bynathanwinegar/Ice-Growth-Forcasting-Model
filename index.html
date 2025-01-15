@@ -134,7 +134,7 @@
 
         const getGroupSize = () => window.innerWidth > window.innerHeight ? 10 : 3;
 
-        const calculateIceGrowth = (airTemp, windSpeed, cloudCover) => {
+        const calculatedThinIceGrowth = (airTemp, windSpeed, cloudCover) => {
             if (airTemp > 32) {
                 return 0;
             }
@@ -142,7 +142,7 @@
             return (0.05 * absAirTemp + 0.02 * absAirTemp * windSpeed + 0.7 * (1 - cloudCover)).toFixed(2);
         };
 
-        const calculateAshtonIceGrowth = (airTemp, freezingDegreeDays) => {
+        const calculatedThickIceGrowth = (airTemp, freezingDegreeDays) => {
             if (airTemp > 32) {
                 return 0;
             }
@@ -179,9 +179,9 @@
 
                     let iceGrowth;
                     if (totalIceThickness < 10) {
-                        iceGrowth = calculateIceGrowth(airTemp, windSpeed, cloudCover);
+                        iceGrowth = calculatedThinIceGrowth(airTemp, windSpeed, cloudCover);
                     } else {
-                        iceGrowth = calculateAshtonIceGrowth(airTemp, freezingDegreeDays);
+                        iceGrowth = calculatedThickIceGrowth(airTemp, freezingDegreeDays);
                     }
 
                     totalIceThickness += parseFloat(isMetric ? iceGrowth : mmToInches(iceGrowth));

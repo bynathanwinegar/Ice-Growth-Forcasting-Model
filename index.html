@@ -135,6 +135,9 @@
         const getGroupSize = () => window.innerWidth > window.innerHeight ? 10 : 3;
 
         const calculateIceGrowth = (airTemp, windSpeed, cloudCover) => {
+            if (airTemp > 32) {
+                return 0;
+            }
             const absAirTemp = Math.abs(airTemp);
             return (0.05 * absAirTemp + 0.02 * absAirTemp * windSpeed + 0.7 * (1 - cloudCover)).toFixed(2);
         };

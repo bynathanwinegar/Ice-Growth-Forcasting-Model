@@ -11,18 +11,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/glide.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        #map { height: 50vh; }
-        #controls, .chart-container, .glide {
-            margin: 20px auto;
-            max-width: 90%;
-        }
-        .chart-container { width: 100%; max-width: 600px; }
+        #map { height: 500px; }
+        #controls { margin: 20px 0; text-align: center; }
+        .chart-container { width: 100%; max-width: 600px; margin: 20px auto; }
         .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
         .toggle-button.active { background-color: #007bff; color: white; }
         h1, h2 { text-align: center; }
@@ -30,13 +21,6 @@
         .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
         .glide__arrows { display: flex; justify-content: center; }
         .glide__arrow { margin: 0 10px; }
-        @media (max-width: 768px) {
-            #map { height: 40vh; }
-            .chart-container, .glide { max-width: 100%; }
-        }
-        @media (max-width: 480px) {
-            #map { height: 30vh; }
-        }
     </style>
 </head>
 <body>
@@ -73,7 +57,7 @@
     </div>
 
     <script>
-        const map = L.map('map').setView([42.821878, -112.403065], 13);
+        const map = L.map('map').setView([42.821878, -112.403065], 30);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
         let selectedLatLng;
@@ -187,7 +171,7 @@
                     const airTemp = (isMetric ? fahrenheitToCelsius(forecast.temperature) : forecast.temperature);
                     const windSpeed = (isMetric ? mphToMs(parseFloat(forecast.windSpeed)) : parseFloat(forecast.windSpeed));
                     const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
-
+                    
                     // Calculate freezing degree days
                     if (airTemp < freezingPoint) {
                         freezingDegreeDays += (freezingPoint - airTemp);
@@ -330,15 +314,7 @@
             });
         };
 
-        const debounce = (func, wait) => {
-            let timeout;
-            return function(...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        };
-
-        window.addEventListener('resize', debounce(updateForecastCardsAndChart, 200));
+        window.addEventListener('resize', updateForecastCardsAndChart);
     </script>
 </body>
 </html>

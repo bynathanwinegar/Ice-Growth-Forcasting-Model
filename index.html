@@ -11,63 +11,39 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/glider-js/glider.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
+        #map { height: 500px; }
+        #controls { margin: 20px 0; text-align: center; }
+        .chart-container { 
+            width: 100%; 
+            max-width: 600px; 
+            margin: 20px auto; 
+            min-height: 300px; /* Add a minimum height */
         }
-        #map {
-            height: 300px;
-            margin: 20px;
+        .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
+        .toggle-button.active { background-color: #007bff; color: white; }
+        h1, h2 { text-align: center; }
+        .glider-slide { padding: 10px; display: flex; justify-content: center; }
+        .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
+        .glider-prev, .glider-next { cursor: pointer; }
+
+        /* Media query for large screens */
+        @media (min-width: 1024px) {
+            .chart-container {
+                max-width: 90%; /* Adjust the max-width as needed */
+            }
         }
-        #controls {
-            margin: 20px;
-            text-align: center;
-        }
-        .chart-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto;
-        }
-        .toggle-button {
-            display: inline-block;
-            padding: 10px 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            background-color: #f0f0f0;
-        }
-        .toggle-button.active {
-            background-color: #007bff;
-            color: white;
-        }
-        h1, h2 {
-            text-align: center;
-        }
-        .glider-slide {
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-        }
-        .hour-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin: 5px;
-        }
-        .glider-prev, .glider-next {
-            cursor: pointer;
-        }
+
+        /* Ensure canvas is responsive */
         canvas {
             width: 100% !important;
             height: auto !important;
         }
+
+        /* Adjust chart container for smaller screens */
         @media (max-width: 768px) {
             .chart-container {
                 max-width: 100%;
+                min-height: 200px; /* Adjust the minimum height for smaller screens */
             }
         }
     </style>
@@ -77,11 +53,11 @@
     <div id="map"></div>
     <div id="controls">
         <label for="search-location">Search Location:</label>
-        <input type="text" id="search-location" placeholder="Enter a location" style="width: 80%; max-width: 300px;">
+        <input type="text" id="search-location" placeholder="Enter a location" style="width: 300px;">
         <button id="search-button">Search</button>
         <br><br>
         <label for="coordinates">Coordinates:</label>
-        <input type="text" id="coordinates" placeholder="Latitude, Longitude" style="width: 80%; max-width: 300px;">
+        <input type="text" id="coordinates" placeholder="Latitude, Longitude" style="width: 300px;">
         <br><br>
         <label>Units:</label>
         <div id="unit-toggle" class="toggle-button">Metric</div>

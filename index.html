@@ -32,6 +32,20 @@
                 max-width: 90%; /* Adjust the max-width as needed */
             }
         }
+
+        /* Ensure canvas is responsive */
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Adjust chart container for smaller screens */
+        @media (max-width: 768px) {
+            .chart-container {
+                max-width: 100%;
+                min-height: 200px; /* Adjust the minimum height for smaller screens */
+            }
+        }
     </style>
 </head>
 <body>
@@ -331,6 +345,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             display: true,

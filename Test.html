@@ -141,7 +141,7 @@
     let selectedLatLng;
     let marker;
 
-    // Initialize map (Adjusted zoom level to a standard value: 13)
+    // Initialize map with a standard zoom level
     const map = L.map('map').setView([42.821878, -112.403065], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
@@ -152,13 +152,14 @@
     const unitToggleImperial = document.getElementById('unit-toggle-imperial');
     const forecastCards = document.getElementById('forecast-cards');
 
+    // Toggle units and update the display if data is already available
     const toggleUnits = (metric) => {
       isMetric = metric;
       unitToggleMetric.classList.toggle('active', metric);
       unitToggleImperial.classList.toggle('active', !metric);
-      // Refresh display if forecast data exists
       if (forecastDataGlobal) {
-        updateForecastCardsAndChart(forecastDataGlobal);
+        // Re-process forecastDataGlobal to update display with new unit conversions
+        processWeatherData(forecastDataGlobal);
       }
     };
 
@@ -225,7 +226,6 @@
       if (airTemp > freezingPoint) {
         return 0;
       }
-      // Use the absolute difference from freezing
       const deltaTemp = Math.abs(airTemp - freezingPoint);
       return (0.05 * deltaTemp + 0.02 * deltaTemp * windSpeed + 0.7 * (1 - cloudCover)).toFixed(2);
     };
@@ -239,7 +239,56 @@
       return (0.04 * freezingDegreeDaysSquareRoot).toFixed(2);
     };
 
-    // Fetch weather data and update charts/cards
+    // Process weather data and update display
+    const processWeatherData = (forecastData) => {
+      // Ensure forecastData is an array
+      if (!Array.isArray(forecastData)) {
+        console.error("Expected forecastData to be an array, but got:", forecastData);
+        alert("Unexpected weather data format.");
+        return;
+      }
+
+      let totalIceThickness = 0;
+      let freezingDegreeDays = 0;
+      const freezingPoint = isMetric ? 0 : 32;
+
+      const processedData = forecastData.map(forecast => {
+        const date = new Date(forecast.startTime);
+        // Convert temperature to Celsius if in metric mode
+        const temperature = isMetric ? parseFloat(fahrenheitToCelsius(forecast.temperature)) : forecast.temperature;
+        // Convert wind speed to m/s if in metric mode
+        const windSpeed = isMetric ? parseFloat(mphToMs(parseFloat(forecast.windSpeed))) : parseFloat(forecast.windSpeed);
+        const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
+        
+        if (temperature < freezingPoint) {
+          freezingDegreeDays += (freezingPoint - temperature);
+        }
+        
+        let iceGrowth;
+        if (totalIceThickness < 10) {
+          iceGrowth = calculateIceGrowth(temperature, windSpeed, cloudCover);
+        } else {
+          iceGrowth = calculateAshtonIceGrowth(temperature, freezingDegreeDays);
+        }
+        const displayIceGrowth = isMetric ? `${iceGrowth} mm/hr` : `${mmToInches(iceGrowth)} inches/hr`;
+        totalIceThickness += parseFloat(isMetric ? iceGrowth : mmToInches(iceGrowth));
+        const totalIceThicknessStr = isMetric ? `${totalIceThickness.toFixed(2)} mm` : `${totalIceThickness.toFixed(2)} inches`;
+
+        return {
+          day: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+          time: date.toISOString().split('T')[1].split(':')[0],
+          temperature: forecast.temperature,
+          windSpeed: forecast.windSpeed,
+          relativeHumidity: forecast.relativeHumidity.value,
+          probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
+          potentialIceGrowth: displayIceGrowth,
+          totalIceThickness: totalIceThicknessStr
+        };
+      });
+      updateForecastCardsAndChart(processedData);
+    };
+
+    // Fetch weather data and process it
     document.getElementById('fetch-weather').addEventListener('click', async () => {
       if (!selectedLatLng) {
         alert('Please select a location on the map or enter coordinates.');
@@ -251,47 +300,10 @@
         const forecastUrl = weatherResponse.data.properties.forecastHourly;
         const forecastResponse = await axios.get(forecastUrl);
         const forecastData = forecastResponse.data.properties.periods;
-        forecastDataGlobal = forecastData; // store globally for resize events
 
-        let totalIceThickness = 0;
-        let freezingDegreeDays = 0;
-        const freezingPoint = isMetric ? 0 : 32;
-        // Map through forecast data
-        const processedData = forecastData.map(forecast => {
-          const date = new Date(forecast.startTime);
-          // Convert temperature only if metric
-          const temperature = isMetric ? parseFloat(fahrenheitToCelsius(forecast.temperature)) : forecast.temperature;
-          // Convert wind speed if metric
-          const windSpeed = isMetric ? parseFloat(mphToMs(parseFloat(forecast.windSpeed))) : parseFloat(forecast.windSpeed);
-          const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
-          
-          if (temperature < freezingPoint) {
-            freezingDegreeDays += (freezingPoint - temperature);
-          }
-          
-          let iceGrowth;
-          if (totalIceThickness < 10) {
-            iceGrowth = calculateIceGrowth(temperature, windSpeed, cloudCover);
-          } else {
-            iceGrowth = calculateAshtonIceGrowth(temperature, freezingDegreeDays);
-          }
-          // For display, if not metric, convert mm to inches
-          const displayIceGrowth = isMetric ? `${iceGrowth} mm/hr` : `${mmToInches(iceGrowth)} inches/hr`;
-          totalIceThickness += parseFloat(isMetric ? iceGrowth : mmToInches(iceGrowth));
-          const totalIceThicknessStr = isMetric ? `${totalIceThickness.toFixed(2)} mm` : `${totalIceThickness.toFixed(2)} inches`;
-          
-          return {
-            day: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-            time: date.toISOString().split('T')[1].split(':')[0],
-            temperature: forecast.temperature,
-            windSpeed: forecast.windSpeed,
-            relativeHumidity: forecast.relativeHumidity.value,
-            probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
-            potentialIceGrowth: displayIceGrowth,
-            totalIceThickness: totalIceThicknessStr
-          };
-        });
-        updateForecastCardsAndChart(processedData);
+        // Store the raw forecast data globally for resize events
+        forecastDataGlobal = forecastData;
+        processWeatherData(forecastData);
       } catch (error) {
         console.error('Error fetching weather data:', error);
         alert('Failed to fetch weather data. Check console for details.');
@@ -300,6 +312,11 @@
 
     // Update forecast cards and chart using the provided data
     const updateForecastCardsAndChart = (weatherData) => {
+      if (!Array.isArray(weatherData)) {
+        console.error("Expected weatherData to be an array, but got:", weatherData);
+        return;
+      }
+
       const groupSize = window.innerWidth > window.innerHeight ? 10 : 3;
       const groupedData = [];
       for (let i = 0; i < weatherData.length; i += groupSize) {
@@ -336,7 +353,6 @@
       const windSpeeds = weatherData.map(data => isMetric ? mphToMs(parseFloat(data.windSpeed)) : data.windSpeed);
       const humidities = weatherData.map(data => data.relativeHumidity);
       const precipitations = weatherData.map(data => data.probabilityOfPrecipitation);
-      // Extract numeric values from the strings
       const iceGrowth = weatherData.map(data => parseFloat(data.potentialIceGrowth));
       const totalIceThicknesses = weatherData.map(data => parseFloat(data.totalIceThickness));
 
@@ -408,8 +424,7 @@
     // Update forecast display on window resize if data is available
     window.addEventListener('resize', () => {
       if (forecastDataGlobal) {
-        // You may consider debouncing this call for performance
-        updateForecastCardsAndChart(forecastDataGlobal);
+        processWeatherData(forecastDataGlobal);
       }
     });
   </script>

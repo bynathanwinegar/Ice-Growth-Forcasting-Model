@@ -1,439 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ice Growth Forecasting Tool</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/css/glide.core.min.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/glide.min.js"></script>
-  <style>
-    #map {
-      height: 500px;
-    }
-    #controls {
-      margin: 20px 0;
-      text-align: center;
-    }
-    .chart-container {
-      width: 100%;
-      max-width: 600px;
-      margin: 20px auto;
-    }
-    .toggle-button {
-      display: inline-block;
-      padding: 5px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #f0f0f0;
-    }
-    .toggle-button.active {
-      background-color: #007bff;
-      color: white;
-    }
-    h1,
-    h2 {
-      text-align: center;
-    }
-    .glide__slide {
-      padding: 10px;
-      display: flex;
-      justify-content: center;
-    }
-    .hour-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin: 5px;
-    }
-    .glide__arrows {
-      display: flex;
-      justify-content: center;
-    }
-    .glide__arrow {
-      margin: 0 10px;
-    }
-    /* Disclaimer Modal Styles */
-    #disclaimer-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    #disclaimer-modal > div {
-      background: white;
-      padding: 20px;
-      max-width: 500px;
-      text-align: center;
-    }
-    /* Hide main content until disclaimer is accepted */
-    #main-content {
-      display: none;
-    }
-  </style>
+<head>     //This code worked good enough to look good, even if it wasn't accurate and quite buggy.
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Growth Forecasting Tool</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/css/glide.core.min.css">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/glide.min.js"></script>
+    <style>
+        #map { height: 500px; }
+        #controls { margin: 20px 0; text-align: center; }
+        .chart-container { width: 100%; max-width: 600px; margin: 20px auto; }
+        .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; }
+        .toggle-button.active { background-color: #007bff; color: white; }
+        h1, h2 { text-align: center; }
+        .glide__slide { padding: 10px; display: flex; justify-content: center; }
+        .hour-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #ccc; padding: 10px; margin: 5px; }
+        .glide__arrows { display: flex; justify-content: center; }
+        .glide__arrow { margin: 0 10px; }
+    </style>
 </head>
 <body>
-  <!-- Disclaimer Modal -->
-  <div id="disclaimer-modal">
-    <div>
-      <h2>Disclaimer</h2>
-      <p>
-        By using this tool, you assume all responsibility for any consequences associated with or relating to the data and predictions provided.
-        The author is not legally responsible for any actions taken based on this information.
-        <strong>DO NOT</strong> walk, skate, drive, or place weight on ice based solely on this tool’s output; always verify ice safety through proper testing and expert guidance.
-      </p>
-      <button id="disclaimer-agree" style="padding: 10px 20px; margin-top: 10px;">I Agree</button>
-    </div>
-  </div>
-
-  <!-- Main Content (hidden until disclaimer accepted) -->
-  <div id="main-content">
     <h1>Ice Growth Forecasting Tool</h1>
     <div id="map"></div>
     <div id="controls">
-      <label for="search-location">Search Location:</label>
-      <input type="text" id="search-location" placeholder="Enter a location" style="width: 300px;" />
-      <button id="search-button">Search</button>
-      <br /><br />
-      <label for="coordinates">Coordinates:</label>
-      <input type="text" id="coordinates" placeholder="Latitude, Longitude" style="width: 300px;" />
-      <br /><br />
-      <label>Units:</label>
-      <div id="unit-toggle" class="toggle-button">Metric</div>
-      <div id="unit-toggle-imperial" class="toggle-button active">Imperial</div>
-      <br /><br />
-      <button id="fetch-weather">Fetch Weather Data</button>
+        <label for="search-location">Search Location:</label>
+        <input type="text" id="search-location" placeholder="Enter a location" style="width: 300px;">
+        <button id="search-button">Search</button>
+        <br><br>
+        <label for="coordinates">Coordinates:</label>
+        <input type="text" id="coordinates" placeholder="Latitude, Longitude" style="width: 300px;">
+        <br><br>
+        <label>Units:</label>
+        <div id="unit-toggle" class="toggle-button">Metric</div>
+        <div id="unit-toggle-imperial" class="toggle-button active">Imperial</div>
+        <br><br>
+        <button id="fetch-weather">Fetch Weather Data</button>
     </div>
     <div id="results">
-      <h2>Results</h2>
-      <div class="chart-container">
-        <canvas id="weatherChart"></canvas>
-      </div>
-      <div class="glide">
-        <div class="glide__track" data-glide-el="track">
-          <ul class="glide__slides" id="forecast-cards"></ul>
+        <h2>Results</h2>
+        <div class="chart-container">
+            <canvas id="weatherChart"></canvas>
         </div>
-        <div class="glide__arrows" data-glide-el="controls">
-          <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
-          <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
+        <div class="glide">
+            <div class="glide__track" data-glide-el="track">
+                <ul class="glide__slides" id="forecast-cards"></ul>
+            </div>
+            <div class="glide__arrows" data-glide-el="controls">
+                <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
+                <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <script>
-    // First, wait for disclaimer consent before loading the main content
-    document.getElementById('disclaimer-agree').addEventListener('click', () => {
-      // Hide disclaimer modal and reveal main content
-      document.getElementById('disclaimer-modal').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
-      // Now initialize the application
-      initApp();
-    });
+    <script>
+        const map = L.map('map').setView([42.821878, -112.403065], 30);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-    // Wrap the main code in an initApp function
-    function initApp() {
-      // Global variables
-      let forecastDataGlobal = null;
-      let isMetric = false; // Default to Imperial
-      let weatherChart;
-      let selectedLatLng;
-      let marker;
+        let selectedLatLng;
+        const coordinatesInput = document.getElementById('coordinates');
+        const searchLocationInput = document.getElementById('search-location');
+        const searchButton = document.getElementById('search-button');
+        const unitToggleMetric = document.getElementById('unit-toggle');
+        const unitToggleImperial = document.getElementById('unit-toggle-imperial');
+        const forecastCards = document.getElementById('forecast-cards');
+        let marker;
+        let isMetric = false; // Default to imperial
+        let weatherChart;
 
-      // Initialize map with a standard zoom level
-      const map = L.map('map').setView([42.821878, -112.403065], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-      const coordinatesInput = document.getElementById('coordinates');
-      const searchLocationInput = document.getElementById('search-location');
-      const searchButton = document.getElementById('search-button');
-      const unitToggleMetric = document.getElementById('unit-toggle');
-      const unitToggleImperial = document.getElementById('unit-toggle-imperial');
-      const forecastCards = document.getElementById('forecast-cards');
-
-      // Toggle units and update the display if data is available
-      const toggleUnits = (metric) => {
-        isMetric = metric;
-        unitToggleMetric.classList.toggle('active', metric);
-        unitToggleImperial.classList.toggle('active', !metric);
-        if (forecastDataGlobal) {
-          processWeatherData(forecastDataGlobal);
-        }
-      };
-
-      unitToggleMetric.addEventListener('click', () => toggleUnits(true));
-      unitToggleImperial.addEventListener('click', () => toggleUnits(false));
-
-      // Conversion functions
-      const fahrenheitToCelsius = (fahrenheit) => ((fahrenheit - 32) * 5 / 9).toFixed(2);
-      const mphToMs = (mph) => (mph * 0.44704).toFixed(2);
-      const mmToInches = (mm) => (mm * 0.0393701).toFixed(2);
-
-      // Update selected coordinates when clicking on map
-      map.on('click', (e) => {
-        selectedLatLng = e.latlng;
-        const { lat, lng } = selectedLatLng;
-        coordinatesInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        if (marker) marker.setLatLng(selectedLatLng);
-        else marker = L.marker(selectedLatLng).addTo(map);
-        searchLocationInput.value = '';
-      });
-
-      // Update map when coordinates are manually entered
-      coordinatesInput.addEventListener('change', () => {
-        const coords = coordinatesInput.value.split(',').map(c => parseFloat(c.trim()));
-        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-          selectedLatLng = { lat: coords[0], lng: coords[1] };
-          if (marker) marker.setLatLng(selectedLatLng);
-          else marker = L.marker(selectedLatLng).addTo(map);
-          map.setView(selectedLatLng, map.getZoom());
-        } else {
-          alert('Invalid coordinates. Please enter in the format: Latitude, Longitude');
-        }
-      });
-
-      // Search location using Nominatim
-      searchButton.addEventListener('click', async () => {
-        const location = searchLocationInput.value;
-        if (!location) {
-          alert('Please enter a location.');
-          return;
-        }
-        try {
-          const response = await axios.get(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`);
-          if (response.data.length > 0) {
-            const { lat, lon } = response.data[0];
-            const newLatLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
-            selectedLatLng = newLatLng;
-            if (marker) marker.setLatLng(newLatLng);
-            else marker = L.marker(newLatLng).addTo(map);
-            map.setView(newLatLng, map.getZoom());
-            coordinatesInput.value = `${newLatLng.lat.toFixed(6)}, ${newLatLng.lng.toFixed(6)}`;
-          } else {
-            alert('Location not found.');
-          }
-        } catch (error) {
-          console.error('Error searching location:', error);
-          alert('Failed to search location. Check console for details.');
-        }
-      });
-
-      // Calculate ice growth functions with unit consistency
-      const calculateIceGrowth = (airTemp, windSpeed, cloudCover) => {
-        const freezingPoint = isMetric ? 0 : 32;
-        if (airTemp > freezingPoint) {
-          return 0;
-        }
-        const deltaTemp = Math.abs(airTemp - freezingPoint);
-        return (0.05 * deltaTemp + 0.02 * deltaTemp * windSpeed + 0.7 * (1 - cloudCover)).toFixed(2);
-      };
-
-      const calculateAshtonIceGrowth = (airTemp, freezingDegreeDays) => {
-        const freezingPoint = isMetric ? 0 : 32;
-        if (airTemp > freezingPoint) {
-          return 0;
-        }
-        const freezingDegreeDaysSquareRoot = Math.sqrt(freezingDegreeDays);
-        return (0.04 * freezingDegreeDaysSquareRoot).toFixed(2);
-      };
-
-      // Process weather data and update display
-      const processWeatherData = (forecastData) => {
-        if (!Array.isArray(forecastData)) {
-          console.error("Expected forecastData to be an array, but got:", forecastData);
-          alert("Unexpected weather data format.");
-          return;
-        }
-
-        let totalIceThickness = 0;
-        let freezingDegreeDays = 0;
-        const freezingPoint = isMetric ? 0 : 32;
-
-        const processedData = forecastData.map(forecast => {
-          const date = new Date(forecast.startTime);
-          const temperature = isMetric ? parseFloat(fahrenheitToCelsius(forecast.temperature)) : forecast.temperature;
-          const windSpeed = isMetric ? parseFloat(mphToMs(parseFloat(forecast.windSpeed))) : parseFloat(forecast.windSpeed);
-          const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
-          
-          if (temperature < freezingPoint) {
-            freezingDegreeDays += (freezingPoint - temperature);
-          }
-          
-          let iceGrowth;
-          if (totalIceThickness < 10) {
-            iceGrowth = calculateIceGrowth(temperature, windSpeed, cloudCover);
-          } else {
-            iceGrowth = calculateAshtonIceGrowth(temperature, freezingDegreeDays);
-          }
-          const displayIceGrowth = isMetric ? `${iceGrowth} mm/hr` : `${mmToInches(iceGrowth)} inches/hr`;
-          totalIceThickness += parseFloat(isMetric ? iceGrowth : mmToInches(iceGrowth));
-          const totalIceThicknessStr = isMetric ? `${totalIceThickness.toFixed(2)} mm` : `${totalIceThickness.toFixed(2)} inches`;
-
-          return {
-            day: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-            time: date.toISOString().split('T')[1].split(':')[0],
-            temperature: forecast.temperature,
-            windSpeed: forecast.windSpeed,
-            relativeHumidity: forecast.relativeHumidity.value,
-            probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
-            potentialIceGrowth: displayIceGrowth,
-            totalIceThickness: totalIceThicknessStr
-          };
-        });
-        updateForecastCardsAndChart(processedData);
-      };
-
-      // Fetch weather data and process it
-      document.getElementById('fetch-weather').addEventListener('click', async () => {
-        if (!selectedLatLng) {
-          alert('Please select a location on the map or enter coordinates.');
-          return;
-        }
-        try {
-          const { lat, lng } = selectedLatLng;
-          const weatherResponse = await axios.get(`https://api.weather.gov/points/${lat},${lng}`);
-          const forecastUrl = weatherResponse.data.properties.forecastHourly;
-          const forecastResponse = await axios.get(forecastUrl);
-          const forecastData = forecastResponse.data.properties.periods;
-
-          forecastDataGlobal = forecastData;
-          processWeatherData(forecastData);
-        } catch (error) {
-          console.error('Error fetching weather data:', error);
-          alert('Failed to fetch weather data. Check console for details.');
-        }
-      });
-
-      // Update forecast cards and chart using the provided data
-      const updateForecastCardsAndChart = (weatherData) => {
-        if (!Array.isArray(weatherData)) {
-          console.error("Expected weatherData to be an array, but got:", weatherData);
-          return;
-        }
-
-        const groupSize = window.innerWidth > window.innerHeight ? 10 : 3;
-        const groupedData = [];
-        for (let i = 0; i < weatherData.length; i += groupSize) {
-          const group = weatherData.slice(i, i + groupSize);
-          groupedData.push(group);
-        }
-        forecastCards.innerHTML = groupedData.map(group => `
-          <li class="glide__slide">
-            ${group.map(data => `
-              <div class="hour-box">
-                <h3>${data.day} ${data.time}:00</h3>
-                <p>Temperature: ${isMetric ? fahrenheitToCelsius(data.temperature) + ' °C' : data.temperature + ' °F'}</p>
-                <p>Wind Speed: ${isMetric ? mphToMs(parseFloat(data.windSpeed)) + ' m/s' : data.windSpeed + ' mph'}</p>
-                <p>Relative Humidity: ${data.relativeHumidity}%</p>
-                <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
-                <p>${data.potentialIceGrowth}</p>
-                <p>Total Ice Thickness: ${data.totalIceThickness}</p>
-              </div>
-            `).join('')}
-          </li>
-        `).join('');
-
-        const glideOptions = {
-          type: 'carousel',
-          perView: 1,
-          gap: 10,
-          animationDuration: 2000,
+        const toggleUnits = (metric) => {
+            isMetric = metric;
+            unitToggleMetric.classList.toggle('active', metric);
+            unitToggleImperial.classList.toggle('active', !metric);
+            updateForecastCardsAndChart();
         };
 
-        new Glide('.glide', glideOptions).mount();
+        unitToggleMetric.addEventListener('click', () => toggleUnits(true));
+        unitToggleImperial.addEventListener('click', () => toggleUnits(false));
 
-        const labels = weatherData.map(data => `${data.day} ${data.time}:00`);
-        const temperatures = weatherData.map(data => isMetric ? fahrenheitToCelsius(data.temperature) : data.temperature);
-        const windSpeeds = weatherData.map(data => isMetric ? mphToMs(parseFloat(data.windSpeed)) : data.windSpeed);
-        const humidities = weatherData.map(data => data.relativeHumidity);
-        const precipitations = weatherData.map(data => data.probabilityOfPrecipitation);
-        const iceGrowth = weatherData.map(data => parseFloat(data.potentialIceGrowth));
-        const totalIceThicknesses = weatherData.map(data => parseFloat(data.totalIceThickness));
+        const fahrenheitToCelsius = (fahrenheit) => ((fahrenheit - 32) * 5 / 9).toFixed(2);
+        const mphToMs = (mph) => (mph * 0.44704).toFixed(2);
+        const mmToInches = (mm) => (mm * 0.0393701).toFixed(2);
 
-        if (weatherChart) {
-          weatherChart.destroy();
-        }
-
-        const ctx = document.getElementById('weatherChart').getContext('2d');
-        weatherChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: `Temperature (${isMetric ? '°C' : '°F'})`,
-                data: temperatures,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                fill: true,
-              },
-              {
-                label: `Wind Speed (${isMetric ? 'm/s' : 'mph'})`,
-                data: windSpeeds,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                fill: true,
-              },
-              {
-                label: 'Relative Humidity (%)',
-                data: humidities,
-                borderColor: 'rgba(153, 102, 255, 1)',
-                backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                fill: true,
-              },
-              {
-                label: 'Probability of Precipitation (%)',
-                data: precipitations,
-                borderColor: 'rgba(255, 159, 64, 1)',
-                backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                fill: true,
-              },
-              {
-                label: `Potential Ice Growth (${isMetric ? 'mm/hr' : 'inches/hr'})`,
-                data: iceGrowth,
-                borderColor: 'rgba(0, 0, 0, 1)',
-                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                fill: true,
-              },
-              {
-                label: `Total Ice Thickness (${isMetric ? 'mm' : 'inches'})`,
-                data: totalIceThicknesses,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                fill: true,
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                display: true,
-              },
-            },
-          },
+        map.on('click', (e) => {
+            selectedLatLng = e.latlng;
+            const { lat, lng } = selectedLatLng;
+            coordinatesInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            if (marker) marker.setLatLng(selectedLatLng);
+            else marker = L.marker(selectedLatLng).addTo(map);
+            searchLocationInput.value = ''; // Clear the location search box
         });
-      };
 
-      // Update forecast display on window resize if data is available
-      window.addEventListener('resize', () => {
-        if (forecastDataGlobal) {
-          processWeatherData(forecastDataGlobal);
-        }
-      });
-    }
-  </script>
+        coordinatesInput.addEventListener('change', () => {
+            const coords = coordinatesInput.value.split(',').map(c => parseFloat(c.trim()));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                selectedLatLng = { lat: coords[0], lng: coords[1] };
+                if (marker) marker.setLatLng(selectedLatLng);
+                else marker = L.marker(selectedLatLng).addTo(map);
+                map.setView(selectedLatLng, map.getZoom());
+            } else {
+                alert('Invalid coordinates. Please enter in the format: Latitude, Longitude');
+            }
+        });
+
+        searchButton.addEventListener('click', async () => {
+            const location = searchLocationInput.value;
+            if (!location) {
+                alert('Please enter a location.');
+                return;
+            }
+
+            try {
+                const response = await axios.get(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`);
+                if (response.data.length > 0) {
+                    const { lat, lon } = response.data[0];
+                    const newLatLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+                    selectedLatLng = newLatLng;
+                    if (marker) marker.setLatLng(newLatLng);
+                    else marker = L.marker(newLatLng).addTo(map);
+                    map.setView(newLatLng, map.getZoom());
+                    coordinatesInput.value = `${newLatLng.lat.toFixed(6)}, ${newLatLng.lng.toFixed(6)}`;
+                } else {
+                    alert('Location not found.');
+                }
+            } catch (error) {
+                console.error('Error searching location:', error);
+                alert('Failed to search location. Check console for details.');
+            }
+        });
+
+        const getGroupSize = () => window.innerWidth > window.innerHeight ? 10 : 3;
+
+        const calculateIceGrowth = (airTemp, windSpeed, cloudCover) => {
+            if (airTemp > 32) {
+                return 0;
+            }
+            const absAirTemp = Math.abs(airTemp);
+            return (0.05 * absAirTemp + 0.02 * absAirTemp * windSpeed + 0.7 * (1 - cloudCover)).toFixed(2);
+        };
+
+        const calculateAshtonIceGrowth = (airTemp, freezingDegreeDays) => {
+            if (airTemp > 32) {
+                return 0;
+            }
+            const freezingDegreeDaysSquareRoot = Math.sqrt(freezingDegreeDays);
+            return (0.04 * freezingDegreeDaysSquareRoot).toFixed(2);
+        };
+
+        document.getElementById('fetch-weather').addEventListener('click', async () => {
+            if (!selectedLatLng) {
+                alert('Please select a location on the map or enter coordinates.');
+                return;
+            }
+
+            try {
+                const { lat, lng } = selectedLatLng;
+                const weatherResponse = await axios.get(`https://api.weather.gov/points/${lat},${lng}`);
+                const forecastUrl = weatherResponse.data.properties.forecastHourly;
+                const forecastResponse = await axios.get(forecastUrl);
+                const forecastData = forecastResponse.data.properties.periods;
+
+                let totalIceThickness = 0;
+                let freezingDegreeDays = 0;
+                const freezingPoint = 32; // Freezing point of water in Fahrenheit
+                const weatherData = forecastData.map(forecast => {
+                    const date = new Date(forecast.startTime);
+                    const airTemp = (isMetric ? fahrenheitToCelsius(forecast.temperature) : forecast.temperature);
+                    const windSpeed = (isMetric ? mphToMs(parseFloat(forecast.windSpeed)) : parseFloat(forecast.windSpeed));
+                    const cloudCover = forecast.probabilityOfPrecipitation.value / 100;
+                    
+                    // Calculate freezing degree days
+                    if (airTemp < freezingPoint) {
+                        freezingDegreeDays += (freezingPoint - airTemp);
+                    }
+
+                    let iceGrowth;
+                    if (totalIceThickness < 10) {
+                        iceGrowth = calculateIceGrowth(airTemp, windSpeed, cloudCover);
+                    } else {
+                        iceGrowth = calculateAshtonIceGrowth(airTemp, freezingDegreeDays);
+                    }
+
+                    totalIceThickness += parseFloat(isMetric ? iceGrowth : mmToInches(iceGrowth));
+                    const convertedIceGrowth = isMetric ? `${iceGrowth} mm/hr` : `${mmToInches(iceGrowth)} inches/hr`;
+                    const totalIceThicknessStr = isMetric ? `${totalIceThickness.toFixed(2)} mm` : `${totalIceThickness.toFixed(2)} inches`;
+
+                    return {
+                        day: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                        time: date.toISOString().split('T')[1].split(':')[0],
+                        temperature: forecast.temperature,
+                        windSpeed: forecast.windSpeed,
+                        relativeHumidity: forecast.relativeHumidity.value,
+                        probabilityOfPrecipitation: forecast.probabilityOfPrecipitation.value,
+                        potentialIceGrowth: convertedIceGrowth,
+                        totalIceThickness: totalIceThicknessStr
+                    };
+                });
+
+                updateForecastCardsAndChart(weatherData);
+
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                alert('Failed to fetch weather data. Check console for details.');
+            }
+        });
+
+        const updateForecastCardsAndChart = (weatherData) => {
+            const groupSize = getGroupSize();
+            const groupedData = [];
+            for (let i = 0; i < weatherData.length; i += groupSize) {
+                const group = weatherData.slice(i, i + groupSize);
+                groupedData.push(group);
+            }
+
+            forecastCards.innerHTML = groupedData.map(group => `
+                <li class="glide__slide">
+                    ${group.map(data => `
+                        <div class="hour-box">
+                            <h3>${data.day} ${data.time}:00</h3>
+                            <p>Temperature: ${isMetric ? fahrenheitToCelsius(data.temperature) + ' °C' : data.temperature + ' °F'}</p>
+                            <p>Wind Speed: ${isMetric ? mphToMs(parseFloat(data.windSpeed)) + ' m/s' : data.windSpeed}</p>
+                            <p>Relative Humidity: ${data.relativeHumidity}%</p>
+                            <p>Probability of Precipitation: ${data.probabilityOfPrecipitation}%</p>
+                            <p>${data.potentialIceGrowth}</p>
+                            <p>Total Ice Thickness: ${data.totalIceThickness}</p>
+                        </div>
+                    `).join('')}
+                </li>
+            `).join('');
+
+            const glideOptions = {
+                type: 'carousel',
+                perView: 1,
+                gap: 10,
+                animationDuration: 2000, // Slow down the animation
+            };
+
+            new Glide('.glide', glideOptions).mount();
+
+            const labels = weatherData.map(data => `${data.day} ${data.time}:00`);
+            const temperatures = weatherData.map(data => isMetric ? fahrenheitToCelsius(data.temperature) : data.temperature);
+            const windSpeeds = weatherData.map(data => isMetric ? mphToMs(parseFloat(data.windSpeed)) : data.windSpeed);
+            const humidities = weatherData.map(data => data.relativeHumidity);
+            const precipitations = weatherData.map(data => data.probabilityOfPrecipitation);
+            const iceGrowth = weatherData.map(data => parseFloat(data.potentialIceGrowth.replace(' mm/hr', '').replace(' inches/hr', '')));
+            const totalIceThicknesses = weatherData.map(data => parseFloat(data.totalIceThickness.replace(' mm', '').replace(' inches', '')));
+
+            if (weatherChart) {
+                weatherChart.destroy();
+            }
+
+            const ctx = document.getElementById('weatherChart').getContext('2d');
+            weatherChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `Temperature (${isMetric ? '°C' : '°F'})`,
+                            data: temperatures,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            fill: true,
+                        },
+                        {
+                            label: `Wind Speed (${isMetric ? 'm/s' : 'mph'})`,
+                            data: windSpeeds,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            fill: true,
+                        },
+                        {
+                            label: 'Relative Humidity (%)',
+                            data: humidities,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            fill: true,
+                        },
+                        {
+                            label: 'Probability of Precipitation (%)',
+                            data: precipitations,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                            fill: true,
+                        },
+                        {
+                            label: `Potential Ice Growth (${isMetric ? 'mm/hr' : 'inches/hr'})`,
+                            data: iceGrowth,
+                            borderColor: 'rgba(0, 0, 0, 1)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                            fill: true,
+                        },
+                        {
+                            label: `Total Ice Thickness (${isMetric ? 'mm' : 'inches'})`,
+                            data: totalIceThicknesses,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            fill: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                        },
+                    },
+                },
+            });
+        };
+
+        window.addEventListener('resize', updateForecastCardsAndChart);
+    </script>
 </body>
 </html>

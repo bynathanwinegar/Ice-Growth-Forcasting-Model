@@ -11,7 +11,15 @@
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
     #map { height: 400px; margin: 10px 0; }
     #controls, #results { margin: 20px; text-align: center; }
-    .toggle-button { display: inline-block; padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background-color: #f0f0f0; margin: 0 5px; }
+    .toggle-button {
+      display: inline-block;
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      margin: 0 5px;
+    }
     .toggle-button.active { background-color: #007bff; color: white; }
     input[type="text"], input[type="number"] { padding: 5px; margin: 5px; width: 220px; }
     button { padding: 8px 15px; margin: 5px; cursor: pointer; }
@@ -24,7 +32,6 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      color: #333;
       z-index: 1000;
     }
     #disclaimer-modal div {
@@ -36,8 +43,29 @@
     }
     /* Hide main content until disclaimer is accepted */
     #main-content { display: none; }
-    /* Simple responsive layout for forecast cards */
-    .forecast-card { display: inline-block; border: 1px solid #ccc; border-radius: 4px; padding: 10px; margin: 5px; width: 150px; }
+    /* Forecast cards container using flexbox */
+    #forecast-cards {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .forecast-card {
+      flex: 1 1 150px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 5px;
+      text-align: center;
+    }
+    /* Responsive chart container */
+    #weatherChart {
+      max-width: 600px;
+      width: 90%;
+      margin: 20px auto;
+      height: 300px;
+    }
   </style>
 </head>
 <body>
@@ -84,7 +112,7 @@
       <h2>Forecast Results</h2>
       <p id="growth-result"></p>
       <div id="forecast-cards"></div>
-      <canvas id="weatherChart" style="max-width:600px; margin: auto;"></canvas>
+      <canvas id="weatherChart"></canvas>
     </div>
   </div>
 
@@ -98,21 +126,37 @@
     document.getElementById('disclaimer-agree').addEventListener('click', () => {
       document.getElementById('disclaimer-modal').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
-      initApp();
+      // Ensure DOM is fully loaded before initializing
+      window.addEventListener('load', initApp);
+      if (document.readyState === 'complete') {
+        initApp();
+      }
     });
 
     function initApp() {
       // Global state variables
       let selectedLatLng = null;
       let isMetric = false; // Default is Imperial (false)
-      let forecastDataGlobal = null;
       let weatherChart = null;
-      
-      // Initialize Leaflet map (set a default zoom level)
+
+      // Helper conversion functions
+      function fahrenheitToCelsius(f) {
+        return ((f - 32) * 5 / 9).toFixed(2);
+      }
+      function mphToMs(mph) {
+        return (mph * 0.44704).toFixed(2);
+      }
+      // Convert string wind speed (e.g., "5") to a number and then to m/s if needed
+      function parseWindSpeed(speedStr) {
+        let speed = parseFloat(speedStr);
+        return isMetric ? mphToMs(speed) : speed.toFixed(2);
+      }
+
+      // Initialize Leaflet map with a default zoom level
       const map = L.map('map').setView([42.82, -112.40], 8);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
       let marker = null;
-      
+
       // DOM element references
       const coordinatesInput = document.getElementById('coordinates');
       const searchLocationInput = document.getElementById('search-location');
@@ -180,8 +224,8 @@
         }
       });
 
-      // Function to calculate daily Freezing Degree Days (FDD)
-      // For each hourly forecast: if temperature below freezing, add (freezing_point - temperature)
+      // Calculate daily Freezing Degree Days (FDD)
+      // Sum hourly deficits (freezingPoint - temperature) for hours below freezing, then divide by 24 to get °C-day (or converted °F-day)
       function calculateDailyFDD(hourlyTemps, freezingPoint) {
         let sum = 0;
         hourlyTemps.forEach(temp => {
@@ -189,21 +233,18 @@
             sum += (freezingPoint - temp);
           }
         });
-        return sum / 24; // average over 24 hours (°C-day or °F-day)
+        return sum / 24;
       }
 
-      // Simplified ice growth calculation using Stefan's law (degree-day method)
-      // In Metric: growth (mm) = 3.05 * FDD; in Imperial: growth (inches) = (growth_mm / 25.4)
-      // Also applies a snow cover reduction factor: factor = 1/(1 + snow/20)
+      // Ice growth calculation using a degree-day model and applying a snow cover reduction factor
+      // In Metric: growth (mm) = 3.05 * FDD; in Imperial: convert mm to inches
       function calculateIceGrowth(hourlyTemps) {
-        // Set freezing point based on units
         let freezingPoint = isMetric ? 0 : 32;
-        // For Imperial mode, convert temperatures to °F; assume forecast API gives Fahrenheit.
-        // (Our weather.gov API returns Fahrenheit by default.)
-        const fdd = calculateDailyFDD(hourlyTemps, freezingPoint);
-        // Calculate raw growth
-        let growth_mm = 3.05 * (isMetric ? fdd : (fdd * 5/9)); // if imperial, convert °F-degree-day to °C-day: (FDD°F *5/9)
-        // Apply snow cover reduction factor
+        // For Imperial, temperatures are in Fahrenheit; convert them to Celsius for FDD calculation
+        const tempsForFDD = hourlyTemps.map(temp => isMetric ? temp : (temp - 32) * 5/9);
+        const fdd = calculateDailyFDD(tempsForFDD, 0); // now in °C-day
+        let growth_mm = 3.05 * fdd;
+        // Apply snow cover reduction factor (the more snow, the less ice growth)
         const snow = parseFloat(snowCoverInput.value) || 0;
         const reductionFactor = 1 / (1 + (snow / 20));
         growth_mm *= reductionFactor;
@@ -215,11 +256,11 @@
         }
       }
 
-      // Function to update forecast display (cards and chart)
+      // Update forecast display: forecast cards and temperature chart
       function updateDisplay(forecastData, growthResult) {
         // Update result text
         growthResultEl.textContent = `Estimated daily ice growth: ${growthResult.growth} ${growthResult.unit}`;
-        // Create forecast cards for the next 24 hours
+        // Clear and create forecast cards for each hourly forecast
         forecastCardsEl.innerHTML = "";
         forecastData.forEach(item => {
           const card = document.createElement("div");
@@ -229,7 +270,7 @@
             Wind: ${item.windSpeed} ${isMetric ? "m/s" : "mph"}`;
           forecastCardsEl.appendChild(card);
         });
-        // Plot a simple line chart of temperature over time
+        // Plot temperature trend using Chart.js
         const ctx = document.getElementById('weatherChart').getContext('2d');
         if (weatherChart) weatherChart.destroy();
         weatherChart = new Chart(ctx, {
@@ -247,37 +288,49 @@
         });
       }
 
-      // Fetch weather data from weather.gov for the selected location
+      // Fetch weather data from weather.gov and calculate ice growth
       async function fetchWeatherAndCalculate() {
-        if (!selectedLatLng) { alert('Please select a location on the map or enter coordinates.'); return; }
+        if (!selectedLatLng) { 
+          alert('Please select a location on the map or enter coordinates.'); 
+          return; 
+        }
         try {
           const { lat, lng } = selectedLatLng;
           // Get grid point from weather.gov API
           const pointsResponse = await axios.get(`https://api.weather.gov/points/${lat},${lng}`);
           const forecastUrl = pointsResponse.data.properties.forecastHourly;
           const forecastResponse = await axios.get(forecastUrl);
-          // Process forecast data: extract next 24 hours
+          // Use next 24 hours from the forecast
           const periods = forecastResponse.data.properties.periods.slice(0, 24);
-          // Map data to a simpler array: time, temperature, wind speed.
+          // Map data: convert temperatures and wind speeds based on selected units
           const hourlyForecast = periods.map(period => {
-            // period.temperature is in Fahrenheit by default
-            return {
-              time: new Date(period.startTime).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' }),
-              temperature: period.temperature,
-              windSpeed: period.windSpeed.split(' ')[0]  // remove units if present
-            };
+            // Convert time to a simple HH:MM format
+            const time = new Date(period.startTime).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
+            // Temperature from API is in Fahrenheit; convert if in metric
+            const temperature = isMetric ? parseFloat(fahrenheitToCelsius(period.temperature)) : period.temperature;
+            // Wind speed: extract numeric value and convert if needed
+            const windSpeed = parseWindSpeed(period.windSpeed.split(' ')[0]);
+            return { time, temperature, windSpeed };
           });
-          // Calculate ice growth based on hourly temperatures
-          const growthResult = calculateIceGrowth(hourlyForecast.map(item => item.temperature));
+          // Extract temperatures for ice growth calculation (always use API values in Fahrenheit then convert if needed)
+          const temperatures = periods.map(period => period.temperature);
+          const growthResult = calculateIceGrowth(temperatures);
           updateDisplay(hourlyForecast, growthResult);
         } catch (error) {
           console.error('Error fetching weather data:', error);
-          alert('Error fetching weather data. Please check console for details.');
+          alert('Error fetching weather data. Please check the console for details.');
         }
       }
 
       // Attach event listener to Fetch Weather button
       fetchWeatherBtn.addEventListener('click', fetchWeatherAndCalculate);
+
+      // Adjust chart and layout on window resize
+      window.addEventListener('resize', () => {
+        if (weatherChart) {
+          weatherChart.resize();
+        }
+      });
     }
   </script>
 </body>

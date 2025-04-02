@@ -8,42 +8,95 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide/dist/css/glide.core.min.css" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    #map { height: 400px; margin: 10px 0; }
-    #controls, #results { margin: 20px; text-align: center; }
-    .toggle-button {
-      display: inline-block;
-      padding: 5px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #f0f0f0;
-      margin: 0 5px;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
     }
-    .toggle-button.active { background-color: #007bff; color: white; }
-    input[type="text"], input[type="number"] { padding: 5px; margin: 5px; width: 220px; }
-    button { padding: 8px 15px; margin: 5px; cursor: pointer; }
-    /* Disclaimer modal (full screen) */
+    /* Disclaimer Modal */
     #disclaimer-modal {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background: rgba(0, 0, 0, 0.85);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      padding: 20px;
     }
     #disclaimer-modal div {
       background: #fff;
       padding: 30px;
       max-width: 600px;
+      width: 100%;
       text-align: center;
       border-radius: 8px;
     }
     /* Hide main content until disclaimer is accepted */
-    #main-content { display: none; }
-    /* Forecast cards container using flexbox */
+    #main-content {
+      display: none;
+      padding: 10px;
+    }
+    /* Controls & Form Styling */
+    #controls {
+      margin: 20px auto;
+      max-width: 600px;
+      text-align: center;
+    }
+    #controls div {
+      margin-bottom: 15px;
+    }
+    input[type="text"],
+    input[type="number"] {
+      padding: 8px;
+      margin: 5px;
+      width: 220px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+    }
+    .toggle-button {
+      display: inline-block;
+      padding: 8px 12px;
+      margin: 0 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+    }
+    .toggle-button.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    /* Map Container */
+    #map {
+      height: 400px;
+      margin: 10px auto;
+      max-width: 90%;
+    }
+    /* Forecast Results */
+    #results {
+      margin: 20px auto;
+      max-width: 600px;
+      text-align: center;
+    }
+    #growth-result {
+      font-size: 1.2em;
+      margin-bottom: 15px;
+    }
+    /* Forecast Cards */
     #forecast-cards {
       display: flex;
       flex-wrap: wrap;
@@ -58,13 +111,28 @@
       padding: 10px;
       margin: 5px;
       text-align: center;
+      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
     }
-    /* Responsive chart container */
+    /* Chart Container */
     #weatherChart {
       max-width: 600px;
       width: 90%;
       margin: 20px auto;
       height: 300px;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #map {
+        height: 300px;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 90%;
+      }
+      .toggle-button {
+        padding: 6px 10px;
+        margin: 3px;
+      }
     }
   </style>
 </head>
@@ -110,7 +178,8 @@
     <div id="map"></div>
     <div id="results">
       <h2>Forecast Results</h2>
-      <p id="growth-result"></p>
+      <!-- Placeholder message until data is loaded -->
+      <p id="growth-result">No forecast data loaded.</p>
       <div id="forecast-cards"></div>
       <canvas id="weatherChart"></canvas>
     </div>
@@ -146,7 +215,7 @@
       function mphToMs(mph) {
         return (mph * 0.44704).toFixed(2);
       }
-      // Convert string wind speed (e.g., "5") to a number and then to m/s if needed
+      // Convert string wind speed to a number and then to m/s if needed
       function parseWindSpeed(speedStr) {
         let speed = parseFloat(speedStr);
         return isMetric ? mphToMs(speed) : speed.toFixed(2);
@@ -205,7 +274,10 @@
       // Search location using Nominatim API
       searchButton.addEventListener('click', async () => {
         const location = searchLocationInput.value;
-        if (!location) { alert('Please enter a location.'); return; }
+        if (!location) { 
+          alert('Please enter a location.'); 
+          return; 
+        }
         try {
           const response = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`);
           if (response.data && response.data.length > 0) {
@@ -225,7 +297,6 @@
       });
 
       // Calculate daily Freezing Degree Days (FDD)
-      // Sum hourly deficits (freezingPoint - temperature) for hours below freezing, then divide by 24 to get °C-day (or converted °F-day)
       function calculateDailyFDD(hourlyTemps, freezingPoint) {
         let sum = 0;
         hourlyTemps.forEach(temp => {
@@ -237,14 +308,13 @@
       }
 
       // Ice growth calculation using a degree-day model and applying a snow cover reduction factor
-      // In Metric: growth (mm) = 3.05 * FDD; in Imperial: convert mm to inches
       function calculateIceGrowth(hourlyTemps) {
         let freezingPoint = isMetric ? 0 : 32;
-        // For Imperial, temperatures are in Fahrenheit; convert them to Celsius for FDD calculation
+        // Convert temps to Celsius for FDD calculation if needed
         const tempsForFDD = hourlyTemps.map(temp => isMetric ? temp : (temp - 32) * 5/9);
-        const fdd = calculateDailyFDD(tempsForFDD, 0); // now in °C-day
+        const fdd = calculateDailyFDD(tempsForFDD, 0); // in °C-day
         let growth_mm = 3.05 * fdd;
-        // Apply snow cover reduction factor (the more snow, the less ice growth)
+        // Apply snow cover reduction factor
         const snow = parseFloat(snowCoverInput.value) || 0;
         const reductionFactor = 1 / (1 + (snow / 20));
         growth_mm *= reductionFactor;
@@ -258,9 +328,7 @@
 
       // Update forecast display: forecast cards and temperature chart
       function updateDisplay(forecastData, growthResult) {
-        // Update result text
         growthResultEl.textContent = `Estimated daily ice growth: ${growthResult.growth} ${growthResult.unit}`;
-        // Clear and create forecast cards for each hourly forecast
         forecastCardsEl.innerHTML = "";
         forecastData.forEach(item => {
           const card = document.createElement("div");
@@ -284,7 +352,10 @@
               fill: false,
             }]
           },
-          options: { responsive: true, maintainAspectRatio: false }
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
         });
       }
 
@@ -296,23 +367,16 @@
         }
         try {
           const { lat, lng } = selectedLatLng;
-          // Get grid point from weather.gov API
           const pointsResponse = await axios.get(`https://api.weather.gov/points/${lat},${lng}`);
           const forecastUrl = pointsResponse.data.properties.forecastHourly;
           const forecastResponse = await axios.get(forecastUrl);
-          // Use next 24 hours from the forecast
           const periods = forecastResponse.data.properties.periods.slice(0, 24);
-          // Map data: convert temperatures and wind speeds based on selected units
           const hourlyForecast = periods.map(period => {
-            // Convert time to a simple HH:MM format
             const time = new Date(period.startTime).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
-            // Temperature from API is in Fahrenheit; convert if in metric
             const temperature = isMetric ? parseFloat(fahrenheitToCelsius(period.temperature)) : period.temperature;
-            // Wind speed: extract numeric value and convert if needed
             const windSpeed = parseWindSpeed(period.windSpeed.split(' ')[0]);
             return { time, temperature, windSpeed };
           });
-          // Extract temperatures for ice growth calculation (always use API values in Fahrenheit then convert if needed)
           const temperatures = periods.map(period => period.temperature);
           const growthResult = calculateIceGrowth(temperatures);
           updateDisplay(hourlyForecast, growthResult);
@@ -322,10 +386,8 @@
         }
       }
 
-      // Attach event listener to Fetch Weather button
       fetchWeatherBtn.addEventListener('click', fetchWeatherAndCalculate);
 
-      // Adjust chart and layout on window resize
       window.addEventListener('resize', () => {
         if (weatherChart) {
           weatherChart.resize();
